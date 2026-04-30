@@ -258,7 +258,9 @@ export default function UploadPage() {
             <p><strong>Autore:</strong> {autoreName}</p>
             {position && <p><strong>Posizione:</strong> {position.lat.toFixed(5)}, {position.lng.toFixed(5)}</p>}
             {draft?.suggested?.stage?.stage_ref && <p><strong>Tappa SICAI:</strong> {draft.suggested.stage.stage_ref}</p>}
-            {draft?.suggested?.comune && <p><strong>Comune:</strong> {draft.suggested.comune}, {draft.suggested.regione}</p>}
+            {draft?.suggested?.regione && <p><strong>Regione:</strong> {draft.suggested.regione}</p>}
+            {draft?.suggested?.provincia && <p><strong>Provincia:</strong> {draft.suggested.provincia}</p>}
+            {draft?.suggested?.comune && <p><strong>Comune:</strong> {draft.suggested.comune}</p>}
           </div>
           <div className="btn-row" style={{ marginTop: 20 }}>
             <button className="btn btn-secondary" onClick={() => setStep(3)}>Indietro</button>
