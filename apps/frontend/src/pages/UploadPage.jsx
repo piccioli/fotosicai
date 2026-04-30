@@ -38,7 +38,7 @@ export default function UploadPage() {
     setError(null);
     // Parse EXIF client-side for GPS preview
     try {
-      const data = await Exifr.parse(f, { gps: true, pick: ['latitude', 'longitude', 'DateTimeOriginal'] });
+      const data = await Exifr.parse(f, { gps: true });
       if (data?.latitude && data?.longitude) {
         setExifGps({ lat: data.latitude, lng: data.longitude });
         setPosition({ lat: data.latitude, lng: data.longitude });
