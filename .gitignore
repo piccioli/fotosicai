@@ -28,6 +28,7 @@ db/*.sqlite-wal
 # Uploaded/generated media
 storage/foto/
 
+
 # OS/editor noise
 .DS_Store
 .idea/

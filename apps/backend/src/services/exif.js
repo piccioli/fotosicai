@@ -1,9 +1,4 @@
-// exifr is an ES module; use dynamic import
-let _exifr = null;
-async function getExifr() {
-  if (!_exifr) _exifr = (await import('exifr')).default || (await import('exifr'));
-  return _exifr;
-}
+const exifr = require('exifr');
 
 /**
  * Parse EXIF metadata from a Buffer.
@@ -11,11 +6,8 @@ async function getExifr() {
  */
 async function parseExif(buffer) {
   try {
-    const ExifReader = await getExifr();
-    const data = await ExifReader.parse(buffer, {
-      gps: true,
-      pick: ['DateTimeOriginal', 'CreateDate', 'latitude', 'longitude'],
-    });
+    // Note: 'pick' interferes with GPS decimal conversion — parse all and extract below.
+    const data = await exifr.parse(buffer, { gps: true });
     if (!data) return { gps: null, datetime: null };
 
     const lat = data.latitude ?? null;

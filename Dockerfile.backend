@@ -2,17 +2,18 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies
+# Install all dependencies (including devDeps for testing)
 COPY apps/backend/package.json ./
-RUN npm install --production
+RUN npm install
 
-# Copy source
+# Copy source and tests
 COPY apps/backend/src ./src
+COPY apps/backend/tests ./tests
 COPY DATA ./DATA
 COPY legal ./legal
 
-# Create data and storage dirs
-RUN mkdir -p db storage
+# Create runtime dirs
+RUN mkdir -p db storage tests/fixtures
 
 EXPOSE 3000
 
