@@ -11,7 +11,7 @@ button { cursor: pointer; }
   padding: 0 16px; height: 52px;
   background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15);
 }
-.app-header__logo { font-size: 22px; }
+.app-header__logo { height: 36px; width: auto; display: block; }
 .app-header__title { font-weight: 700; font-size: 1.1rem; color: #cc0000; }
 .app-header__nav { display: flex; gap: 4px; margin-left: auto; }
 .app-header__nav a {

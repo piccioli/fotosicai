@@ -9,7 +9,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <header className="app-header">
-        <span className="app-header__logo">📷</span>
+        <img className="app-header__logo" src="/logo-sicai.png" alt="SICAI" />
         <span className="app-header__title">FotoSICAI</span>
         <nav className="app-header__nav">
           <NavLink to="/" end>Mappa</NavLink>
