@@ -1,0 +1,131 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; color: #222; }
+a { color: #0066cc; text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { cursor: pointer; }
+
+/* Header */
+.app-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px; height: 52px;
+  background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15);
+}
+.app-header__logo { font-size: 22px; }
+.app-header__title { font-weight: 700; font-size: 1.1rem; color: #cc0000; }
+.app-header__nav { display: flex; gap: 4px; margin-left: auto; }
+.app-header__nav a {
+  padding: 6px 14px; border-radius: 6px; font-size: 0.9rem; color: #444;
+  transition: background .15s;
+}
+.app-header__nav a:hover { background: #f0f0f0; text-decoration: none; }
+.app-header__nav a.active { background: #cc0000; color: #fff; font-weight: 600; }
+
+.app-main { margin-top: 52px; height: calc(100vh - 52px); }
+
+/* Map page */
+.map-wrap { position: relative; width: 100%; height: 100%; }
+.map-wrap .leaflet-container { width: 100%; height: 100%; }
+.map-zoom-hint {
+  position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,.7); color: #fff; padding: 10px 20px;
+  border-radius: 20px; font-size: 13px; pointer-events: none; z-index: 500;
+}
+
+/* Photo popup */
+.photo-popup { font-size: 13px; min-width: 200px; }
+.photo-popup img { width: 100%; border-radius: 4px; margin-bottom: 8px; cursor: pointer; }
+.photo-popup h3 { font-size: 14px; margin-bottom: 4px; }
+.photo-popup p { color: #555; margin: 2px 0; }
+.photo-popup a { display: inline-block; margin-top: 8px; font-weight: 500; }
+
+/* Upload wizard */
+.upload-page { max-width: 680px; margin: 0 auto; padding: 24px 16px; }
+.upload-page h1 { font-size: 1.4rem; margin-bottom: 8px; color: #cc0000; }
+.step-indicator { display: flex; gap: 4px; margin-bottom: 24px; }
+.step-indicator__dot {
+  flex: 1; height: 4px; border-radius: 2px; background: #ddd;
+  transition: background .2s;
+}
+.step-indicator__dot.done { background: #cc0000; }
+.step-indicator__dot.active { background: #ff6666; }
+
+.step-card {
+  background: #fff; border-radius: 10px; padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+.step-card h2 { font-size: 1.1rem; margin-bottom: 16px; }
+
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; color: #444; }
+.field input, .field textarea {
+  width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px;
+  font-size: 14px; font-family: inherit;
+}
+.field input:focus, .field textarea:focus { outline: none; border-color: #0066cc; }
+.field textarea { resize: vertical; min-height: 80px; }
+.field .hint { font-size: 12px; color: #888; margin-top: 4px; }
+
+.preview-img {
+  width: 100%; max-height: 300px; object-fit: contain;
+  border-radius: 6px; border: 1px solid #eee; background: #000;
+}
+
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 500; border: none; }
+.btn-primary { background: #cc0000; color: #fff; }
+.btn-primary:hover { background: #a80000; }
+.btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+.btn-secondary { background: #f0f0f0; color: #333; }
+.btn-secondary:hover { background: #e0e0e0; }
+.btn-row { display: flex; gap: 10px; margin-top: 20px; }
+
+.tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; background: #eef3ff; color: #0044aa; }
+.tag.warning { background: #fff3e0; color: #aa6600; }
+.tag.success { background: #e8f5e9; color: #2e7d32; }
+
+.loading-dots::after {
+  content: '...';
+  animation: dots 1s steps(3, end) infinite;
+}
+@keyframes dots { 0%,100% { content: '.'; } 33% { content: '..'; } 66% { content: '...'; } }
+
+.consent-text {
+  max-height: 300px; overflow-y: auto;
+  padding: 16px; border: 1px solid #ddd; border-radius: 6px;
+  background: #fafafa; font-size: 13px; line-height: 1.6;
+  margin-bottom: 16px;
+}
+.consent-text h1, .consent-text h2 { font-size: 1rem; margin: 12px 0 6px; }
+.consent-text p { margin: 6px 0; }
+.consent-text ul { padding-left: 20px; margin: 6px 0; }
+
+.checkbox-row { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; }
+.checkbox-row input[type=checkbox] { margin-top: 2px; width: 18px; height: 18px; cursor: pointer; }
+
+/* Map picker (inside upload) */
+.map-picker { height: 280px; border-radius: 6px; overflow: hidden; border: 1px solid #ccc; margin-bottom: 12px; }
+
+/* Search page */
+.search-page { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+.search-page h1 { font-size: 1.4rem; margin-bottom: 16px; color: #cc0000; }
+.search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+.search-bar input { flex: 1; padding: 10px 14px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.filters select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
+.results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.photo-card { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+.photo-card img { width: 100%; height: 160px; object-fit: cover; }
+.photo-card__body { padding: 10px; }
+.photo-card__title { font-size: 13px; font-weight: 600; margin-bottom: 4px; line-height: 1.3; }
+.photo-card__meta { font-size: 11px; color: #888; }
+.pagination { display: flex; justify-content: center; gap: 8px; margin-top: 24px; }
+.pagination button { padding: 8px 16px; border-radius: 6px; border: 1px solid #ccc; background: #fff; font-size: 14px; }
+.pagination button.active { background: #cc0000; color: #fff; border-color: #cc0000; }
+.empty-state { text-align: center; padding: 40px; color: #888; }
+
+/* Photo detail */
+.photo-detail { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+.photo-detail img { width: 100%; border-radius: 8px; margin-bottom: 20px; }
+.photo-detail h1 { font-size: 1.5rem; margin-bottom: 8px; }
+.photo-detail .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; font-size: 13px; }
+.meta-item label { font-weight: 600; color: #555; }

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mappa Interattiva</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="header">
+    <img src="logo.png" alt="Logo" class="header-logo">
+    <span id="app-title"></span>
+    <button type="button" class="info-btn info-btn-right" id="info-btn" aria-label="Informazioni">ℹ</button>
+  </header>
+  <div id="info-modal" class="info-modal" role="dialog" aria-labelledby="info-modal-title">
+    <div class="info-modal-box">
+      <div class="info-modal-header">
+        <img src="logo.png" alt="" class="info-modal-logo">
+        <h2 id="info-modal-title"></h2>
+      </div>
+      <p id="info-modal-desc"></p>
+      <div id="info-modal-software" class="info-modal-software"></div>
+      <button type="button" class="info-modal-close" id="info-modal-close">Chiudi</button>
+    </div>
+  </div>
+  <div id="debug-popup" class="debug-popup">
+    <div class="debug-popup-zoom">Zoom: <span id="debug-zoom"></span></div>
+    <div class="debug-popup-json" id="debug-nominatim"></div>
+  </div>
+  <div class="map-container">
+    <div id="map"></div>
+    <div id="geojson-status" class="geojson-status">Caricamento sentiero…</div>
+    <div id="zoom-overlay" class="zoom-overlay">
+      <div class="zoom-overlay-msg" id="zoom-overlay-msg"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var d = document;
+      function load(src, next) {
+        var s = d.createElement('script');
+        s.src = src;
+        s.onload = next;
+        d.body.appendChild(s);
+      }
+      load('config.js?t=' + Date.now(), function () {
+        load('code/version.js', function () {
+        load('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', function () {
+          load('code/nominatim.js', function () {
+            load('code/main.js', function () {});
+          });
+        });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

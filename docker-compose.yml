@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_PATH: /app/db/fotosicai.sqlite
+      STORAGE_DIR: /app/storage
+      DATA_DIR: /app/DATA
+      CONSENT_PATH: /app/legal/consenso.md
+      PUBLIC_BASE_URL: http://localhost:8080
+    volumes:
+      - ./db:/app/db
+      - ./storage:/app/storage
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./storage:/usr/share/nginx/html/storage:ro
