@@ -89,7 +89,7 @@ export default function MapPage() {
       <img src="${img.thumb_url}" alt="${escHtml(img.titolo)}" onclick="window.location='/foto/${img.id}'" />
       <h3>${escHtml(img.titolo)}</h3>
       ${img.stage_ref ? `<p><strong>Tappa:</strong> ${escHtml(img.stage_ref)}</p>` : ''}
-      ${img.data_scatto ? `<p>${escHtml(img.data_scatto.slice(0, 10))}</p>` : ''}
+      ${img.data_scatto ? `<p>${escHtml(new Date(img.data_scatto).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }))}</p>` : ''}
       <a href="/foto/${img.id}">Visualizza</a>
     </div>`;
   }
