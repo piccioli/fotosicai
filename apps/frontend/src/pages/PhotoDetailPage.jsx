@@ -24,7 +24,7 @@ export default function PhotoDetailPage() {
       </a>
       <div className="meta-grid" style={{ marginTop: 20 }}>
         {photo.autore_nome && <div className="meta-item"><label>Autore:</label> {photo.autore_nome}</div>}
-        {photo.data_scatto && <div className="meta-item"><label>Data scatto:</label> {photo.data_scatto.slice(0, 10)}</div>}
+        {photo.data_scatto && <div className="meta-item"><label>Data scatto:</label> {new Date(photo.data_scatto).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}</div>}
         {photo.stage_ref && <div className="meta-item"><label>Tappa SICAI:</label> {photo.stage_ref}</div>}
         {photo.comune && <div className="meta-item"><label>Comune:</label> {photo.comune}</div>}
         {photo.provincia && <div className="meta-item"><label>Provincia:</label> {photo.provincia}</div>}
