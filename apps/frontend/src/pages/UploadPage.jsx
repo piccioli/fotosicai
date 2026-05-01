@@ -196,26 +196,8 @@ export default function UploadPage() {
           </div>
           {previewUrl && <img className="preview-img" src={previewUrl} alt="Anteprima" />}
           {exifGps && (
-            <div style={{ marginTop: 10, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span className="tag success">GPS rilevato: {exifGps.lat.toFixed(5)}, {exifGps.lng.toFixed(5)}</span>
-              {exifGeoInfo ? (
-                <span className="tag">
-                  {[exifGeoInfo.regione, exifGeoInfo.provincia, exifGeoInfo.comune].filter(Boolean).join(' › ')}
-                </span>
-              ) : (
-                <span className="tag" style={{ color: '#888' }}>Identificazione luogo…</span>
-              )}
-              {exifStage === undefined && (
-                <span className="tag" style={{ color: '#888' }}>Ricerca tappa SICAI…</span>
-              )}
-              {exifStage !== undefined && exifStage?.stage_ref && (
-                <span className="tag success">Tappa SICAI: {exifStage.stage_ref} ({Math.round(exifStage.distance_m)} m dal tracciato)</span>
-              )}
-              {exifStage !== undefined && !exifStage?.stage_ref && (
-                <span className="tag warning">
-                  Nessuna tappa SICAI nel raggio di {Math.round(Number(import.meta.env.VITE_STAGE_MAX_DISTANCE_M || 5000) / 1000)} km — la foto deve essere scattata nei pressi del Sentiero Italia. Puoi cambiare la posizione manualmente nel passo successivo.
-                </span>
-              )}
+            <div style={{ marginTop: 12 }}>
+              <PositionMeta position={exifGps} exifGeoInfo={exifGeoInfo} exifStage={exifStage} />
             </div>
           )}
           {!exifGps && file && (
@@ -290,27 +272,12 @@ export default function UploadPage() {
             {mapFullscreen && (
               <div className="map-fullscreen-panel">
                 <div className="map-fullscreen-info">
-                  {position && (
-                    <div style={{ fontSize: 13, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      <span className="tag success">{position.lat.toFixed(5)}, {position.lng.toFixed(5)}</span>
-                      {exifGeoInfo && (
-                        <span className="tag">
-                          {[exifGeoInfo.regione, exifGeoInfo.provincia, exifGeoInfo.comune].filter(Boolean).join(' › ')}
-                        </span>
-                      )}
-                      {exifStage?.stage_ref && (
-                        <span className="tag success">Tappa SICAI: {exifStage.stage_ref} ({Math.round(exifStage.distance_m)} m dal tracciato)</span>
-                      )}
-                      {exifStage !== undefined && !exifStage?.stage_ref && (
-                        <span className="tag warning">Fuori dal tracciato SICAI — sposta il marker</span>
-                      )}
-                    </div>
-                  )}
+                  <PositionMeta position={position} exifGeoInfo={exifGeoInfo} exifStage={exifStage} />
                 </div>
                 <div className="btn-row" style={{ margin: 0, flexShrink: 0 }}>
                   <button className="btn btn-secondary" onClick={() => setStep(0)}>Indietro</button>
                   <button className="btn btn-primary" disabled={!canProceedStep1 || submitting} onClick={handleUploadDraft}>
-                    {submitting ? <span className="loading-dots">Caricamento</span> : 'Carica e continua'}
+                    {submitting ? <span className="loading-dots">Caricamento</span> : 'Avanti'}
                   </button>
                 </div>
               </div>
@@ -321,27 +288,14 @@ export default function UploadPage() {
           {!mapFullscreen && (
             <>
               {position && (
-                <div style={{ marginTop: 8, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <span className="tag success">{position.lat.toFixed(5)}, {position.lng.toFixed(5)}</span>
-                  {exifGeoInfo && (
-                    <span className="tag">
-                      {[exifGeoInfo.regione, exifGeoInfo.provincia, exifGeoInfo.comune].filter(Boolean).join(' › ')}
-                    </span>
-                  )}
-                  {exifStage?.stage_ref && (
-                    <span className="tag success">Tappa SICAI: {exifStage.stage_ref} ({Math.round(exifStage.distance_m)} m dal tracciato)</span>
-                  )}
-                  {exifStage !== undefined && !exifStage?.stage_ref && (
-                    <span className="tag warning">
-                      Nessuna tappa SICAI nel raggio di {Math.round(Number(import.meta.env.VITE_STAGE_MAX_DISTANCE_M || 5000) / 1000)} km — sposta il marker nei pressi del Sentiero Italia.
-                    </span>
-                  )}
+                <div style={{ marginTop: 12 }}>
+                  <PositionMeta position={position} exifGeoInfo={exifGeoInfo} exifStage={exifStage} />
                 </div>
               )}
               <div className="btn-row">
                 <button className="btn btn-secondary" onClick={() => setStep(0)}>Indietro</button>
                 <button className="btn btn-primary" disabled={!canProceedStep1 || submitting} onClick={handleUploadDraft}>
-                  {submitting ? <span className="loading-dots">Caricamento</span> : 'Carica e continua'}
+                  {submitting ? <span className="loading-dots">Caricamento</span> : 'Avanti'}
                 </button>
               </div>
             </>
@@ -442,6 +396,30 @@ export default function UploadPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function PositionMeta({ position, exifGeoInfo, exifStage }) {
+  const withinThreshold = exifStage === undefined || exifStage === null || !!exifStage?.stage_ref;
+  return (
+    <>
+      <PhotoMeta
+        stageRef={exifStage?.stage_ref}
+        distanceM={exifStage?.distance_m}
+        lat={position?.lat}
+        lng={position?.lng}
+        regione={exifGeoInfo?.regione}
+        provincia={exifGeoInfo?.provincia}
+        comune={exifGeoInfo?.comune}
+      />
+      {exifStage !== undefined && !withinThreshold && (
+        <p style={{ marginTop: 8, fontSize: 13 }}>
+          <span className="tag warning">
+            Nessuna tappa SICAI nel raggio di {Math.round(Number(import.meta.env.VITE_STAGE_MAX_DISTANCE_M || 5000) / 1000)} km — sposta il marker nei pressi del Sentiero Italia.
+          </span>
+        </p>
+      )}
+    </>
   );
 }
 
