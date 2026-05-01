@@ -4,7 +4,7 @@ const path = require('path');
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../../../../DATA');
 const GEOJSON_PATH = path.join(DATA_DIR, 'data.geojson');
 const CSV_PATH = path.join(DATA_DIR, 'sentiero_italia_tappe_id_name - MAPPING.csv');
-const MAX_DISTANCE_M = Number(process.env.STAGE_MAX_DISTANCE_M) || 2000;
+const MAX_DISTANCE_M = Number(process.env.VITE_STAGE_MAX_DISTANCE_M) || 5000;
 
 let features = [];
 let idToRef = {};

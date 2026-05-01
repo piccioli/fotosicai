@@ -27,7 +27,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        VITE_POSITION_CIRCLE_RADIUS_M: ${VITE_POSITION_CIRCLE_RADIUS_M:-5000}
+        VITE_STAGE_MAX_DISTANCE_M: ${VITE_STAGE_MAX_DISTANCE_M:-5000}
     restart: unless-stopped
     depends_on:
       backend:

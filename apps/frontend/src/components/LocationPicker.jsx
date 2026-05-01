@@ -4,8 +4,8 @@ import L from 'leaflet';
 const TILE_URL = 'https://api.webmapp.it/tiles/{z}/{x}/{y}.png';
 const TILE_ATTR = '&copy; CAI &copy; OpenStreetMap';
 
-// Raggio del cerchio di riferimento (in metri) — configurabile via VITE_POSITION_CIRCLE_RADIUS_M nel .env
-const POSITION_CIRCLE_RADIUS_M = Number(import.meta.env.VITE_POSITION_CIRCLE_RADIUS_M) || 5000;
+// Raggio del cerchio di riferimento (in metri), allineato al massimo dalla tappa — VITE_STAGE_MAX_DISTANCE_M nel .env
+const POSITION_CIRCLE_RADIUS_M = Number(import.meta.env.VITE_STAGE_MAX_DISTANCE_M) || 5000;
 
 const CIRCLE_STYLE = {
   color: '#1a6bb5',

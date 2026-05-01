@@ -190,7 +190,7 @@ export default function UploadPage() {
               )}
               {exifStage !== undefined && !exifStage?.stage_ref && (
                 <span className="tag warning">
-                  Nessuna tappa SICAI nel raggio di {Math.round(Number(import.meta.env.VITE_POSITION_CIRCLE_RADIUS_M || 5000) / 1000)} km — la foto deve essere scattata nei pressi del Sentiero Italia. Puoi cambiare la posizione manualmente nel passo successivo.
+                  Nessuna tappa SICAI nel raggio di {Math.round(Number(import.meta.env.VITE_STAGE_MAX_DISTANCE_M || 5000) / 1000)} km — la foto deve essere scattata nei pressi del Sentiero Italia. Puoi cambiare la posizione manualmente nel passo successivo.
                 </span>
               )}
             </div>
@@ -242,7 +242,7 @@ export default function UploadPage() {
               )}
               {exifStage !== undefined && !exifStage?.stage_ref && (
                 <span className="tag warning">
-                  Nessuna tappa SICAI nel raggio di {Math.round(Number(import.meta.env.VITE_POSITION_CIRCLE_RADIUS_M || 5000) / 1000)} km — sposta il marker nei pressi del Sentiero Italia.
+                  Nessuna tappa SICAI nel raggio di {Math.round(Number(import.meta.env.VITE_STAGE_MAX_DISTANCE_M || 5000) / 1000)} km — sposta il marker nei pressi del Sentiero Italia.
                 </span>
               )}
             </div>

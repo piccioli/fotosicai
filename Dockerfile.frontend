@@ -11,8 +11,8 @@ RUN npm install --workspace=apps/frontend --legacy-peer-deps
 COPY apps/frontend ./apps/frontend
 
 # Variabili VITE_* passate come build arg → iniettate nel bundle da Vite
-ARG VITE_POSITION_CIRCLE_RADIUS_M=5000
-ENV VITE_POSITION_CIRCLE_RADIUS_M=$VITE_POSITION_CIRCLE_RADIUS_M
+ARG VITE_STAGE_MAX_DISTANCE_M=5000
+ENV VITE_STAGE_MAX_DISTANCE_M=$VITE_STAGE_MAX_DISTANCE_M
 
 RUN npm run build --workspace=apps/frontend
 
