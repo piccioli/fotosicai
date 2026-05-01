@@ -448,16 +448,70 @@ describe('Upload — flusso completo', () => {
     expect(fin.body.pending).toBe(true);
     expect(fin.body.id).toBe(id);
     expect(fin.body.email).toBe('mario@example.it');
+    expect(fin.body.email_sent).toBe(true);
     expect(fin.body.url).toBeUndefined();
 
     // Email di verifica inviata
     expect(sendVerificationEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ to: 'mario@example.it', photoId: id })
+      expect.objectContaining({ to: 'mario@example.it', token: expect.any(String) })
     );
 
     // Foto non ancora visibile pubblicamente
     const list = await request(app).get('/api/images');
     expect(list.body.some((i) => i.id === id)).toBe(false);
+  });
+
+  test('Secondo finalize stessa email → pending senza nuova email', async () => {
+    if (skipIfNoFixture()) return;
+
+    const first = await request(app)
+      .post('/api/upload')
+      .attach('file', FIXTURE_PATH)
+      .field('autore_nome', 'Mario Rossi')
+      .field('email', 'dup@example.it')
+      .field('lat', '43.7')
+      .field('lng', '11.2');
+
+    await request(app)
+      .post(`/api/upload/${first.body.id}/finalize`)
+      .send({
+        titolo: 'Prima',
+        autore_nome: 'Mario Rossi',
+        lat: 43.7,
+        lng: 11.2,
+        consenso_version: '2026-04-30',
+        consenso_accepted: true,
+      });
+
+    const callsAfterFirst = sendVerificationEmail.mock.calls.length;
+
+    const second = await request(app)
+      .post('/api/upload')
+      .attach('file', FIXTURE_PATH)
+      .field('autore_nome', 'Mario Rossi')
+      .field('email', 'dup@example.it')
+      .field('lat', '43.7')
+      .field('lng', '11.2');
+
+    const fin2 = await request(app)
+      .post(`/api/upload/${second.body.id}/finalize`)
+      .send({
+        titolo: 'Seconda',
+        autore_nome: 'Mario Rossi',
+        lat: 43.7,
+        lng: 11.2,
+        consenso_version: '2026-04-30',
+        consenso_accepted: true,
+      });
+
+    expect(fin2.status).toBe(200);
+    expect(fin2.body.pending).toBe(true);
+    expect(fin2.body.email_sent).toBe(false);
+    expect(sendVerificationEmail.mock.calls.length).toBe(callsAfterFirst);
+
+    const db = getDb();
+    const nPending = db.prepare("SELECT COUNT(*) AS n FROM images WHERE LOWER(email) = LOWER(?) AND status = 'pending_verification'").get('dup@example.it').n;
+    expect(nPending).toBe(2);
   });
 
   test('Verifica token → foto pubblicata e rimossa dai pending', async () => {
@@ -483,7 +537,26 @@ describe('Upload — flusso completo', () => {
         consenso_accepted: true,
       });
 
-    // Leggo il token dal DB
+    const upload2 = await request(app)
+      .post('/api/upload')
+      .attach('file', FIXTURE_PATH)
+      .field('autore_nome', 'Mario Rossi')
+      .field('email', 'mario@example.it')
+      .field('lat', '43.7')
+      .field('lng', '11.2');
+
+    await request(app)
+      .post(`/api/upload/${upload2.body.id}/finalize`)
+      .send({
+        titolo: 'Altra foto stessa email',
+        autore_nome: 'Mario Rossi',
+        lat: 43.7,
+        lng: 11.2,
+        consenso_version: '2026-04-30',
+        consenso_accepted: true,
+      });
+
+    // Leggo il token dal DB (solo la prima foto in coda ha il token)
     const db = getDb();
     const row = db.prepare('SELECT verification_token FROM images WHERE id = ?').get(id);
     expect(row.verification_token).toBeTruthy();
@@ -491,8 +564,7 @@ describe('Upload — flusso completo', () => {
     // Clicco il link di verifica
     const verify = await request(app).get(`/api/verify/${row.verification_token}`);
     expect(verify.status).toBe(302);
-    expect(verify.headers.location).toContain(`photo=${id}`);
-    expect(verify.headers.location).toContain('verified=1');
+    expect(verify.headers.location).toContain('email_verified=1');
 
     // Token consumato, status=published ma ancora non validata dall'admin
     const rowAfter = db.prepare('SELECT verification_token, status, validated_at FROM images WHERE id = ?').get(id);
@@ -500,9 +572,15 @@ describe('Upload — flusso completo', () => {
     expect(rowAfter.verification_token).toBeNull();
     expect(rowAfter.validated_at).toBeNull();
 
+    const row2After = db.prepare('SELECT verification_token, status, validated_at FROM images WHERE id = ?').get(upload2.body.id);
+    expect(row2After.status).toBe('published');
+    expect(row2After.verification_token).toBeNull();
+    expect(row2After.validated_at).toBeNull();
+
     // Foto NON ancora visibile pubblicamente (manca validazione admin)
     const listBefore = await request(app).get('/api/images');
     expect(listBefore.body.some((i) => i.id === id)).toBe(false);
+    expect(listBefore.body.some((i) => i.id === upload2.body.id)).toBe(false);
 
     // Admin valida → foto visibile
     const val = await request(app)
@@ -511,8 +589,14 @@ describe('Upload — flusso completo', () => {
     expect(val.status).toBe(200);
     expect(val.body.validated).toBe(true);
 
+    const val2 = await request(app)
+      .post(`/api/admin/images/${upload2.body.id}/validate`)
+      .set('Authorization', 'Bearer test-admin-token');
+    expect(val2.status).toBe(200);
+
     const listAfter = await request(app).get('/api/images');
     expect(listAfter.body.some((i) => i.id === id)).toBe(true);
+    expect(listAfter.body.some((i) => i.id === upload2.body.id)).toBe(true);
   });
 
   test('Token già usato → 404', async () => {

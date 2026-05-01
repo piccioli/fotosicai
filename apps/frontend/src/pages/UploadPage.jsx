@@ -167,9 +167,9 @@ export default function UploadPage() {
         ai_generated: !aiError && !!titolo,
       });
       if (result.published) {
-        navigate(result.url ? result.url.replace(/^https?:\/\/[^/]+/, '') : `/?photo=${result.id}&verified=1`);
+        navigate('/');
       } else {
-        navigate(`/upload/pending?email=${encodeURIComponent(result.email)}`);
+        navigate(`/upload/pending?email=${encodeURIComponent(result.email)}&email_sent=${result.email_sent !== false}`);
       }
     } catch (e) {
       setError(e.message);

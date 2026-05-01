@@ -201,7 +201,48 @@ router.post('/:id/finalize', async (req, res, next) => {
       });
     }
 
-    // No trust cache hit — set pending_verification and send confirmation email
+    // No trust cache hit — check if a pending_verification already exists for this email
+    const alreadyPending = db
+      .prepare("SELECT COUNT(*) AS n FROM images WHERE LOWER(email) = LOWER(?) AND status = 'pending_verification'")
+      .get(email).n;
+
+    if (alreadyPending > 0) {
+      // Another photo is already waiting for email verification: save this one too but skip the email.
+      const leadSentAtRow = db.prepare(`
+        SELECT verification_sent_at AS sent_at
+        FROM images
+        WHERE LOWER(email) = LOWER(?) AND status = 'pending_verification'
+        ORDER BY CASE WHEN verification_token IS NOT NULL THEN 0 ELSE 1 END,
+                 datetime(verification_sent_at) ASC,
+                 datetime(created_at) ASC
+        LIMIT 1
+      `).get(email);
+      const sentAtForQueue = leadSentAtRow?.sent_at || now;
+
+      db.prepare(
+        `UPDATE images SET
+          status = 'pending_verification',
+          verification_token = NULL, verification_sent_at = ?,
+          titolo = ?, caption = ?,
+          autore_nome = ?,
+          lat = ?, lng = ?,
+          paese = ?, regione = ?, provincia = ?, comune = ?,
+          stage_id = ?, stage_ref = ?, stage_distance_m = ?,
+          ai_generated = ?,
+          consenso = 1, consenso_version = ?, consenso_accepted_at = ?
+         WHERE id = ?`
+      ).run(
+        sentAtForQueue,
+        finalTitolo, finalCaption, finalAutore,
+        finalLat, finalLng,
+        geoInfo.paese ?? null, geoInfo.regione ?? null, geoInfo.provincia ?? null, geoInfo.comune ?? null,
+        stageInfo.stage_id, stageInfo.stage_ref, stageInfo.distance_m,
+        aiGenerated, consentVer, now, img.id
+      );
+      return res.json({ pending: true, id: img.id, email, email_sent: false });
+    }
+
+    // First pending photo for this email — create token and send verification email
     const token = crypto.randomBytes(32).toString('hex');
 
     db.prepare(
@@ -226,7 +267,7 @@ router.post('/:id/finalize', async (req, res, next) => {
     );
 
     try {
-      await sendVerificationEmail({ to: email, photoId: img.id, token, titolo: finalTitolo });
+      await sendVerificationEmail({ to: email, token });
     } catch (mailErr) {
       // Keep data coherent: if the email cannot be sent, avoid leaving the photo stuck in pending state.
       db.prepare(
@@ -254,7 +295,7 @@ router.post('/:id/finalize', async (req, res, next) => {
       return next(err);
     }
 
-    res.json({ pending: true, id: img.id, email });
+    res.json({ pending: true, id: img.id, email, email_sent: true });
   } catch (err) {
     next(err);
   }
