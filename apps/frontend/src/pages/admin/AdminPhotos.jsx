@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { adminApi } from '../../lib/api.js';
+import PhotoMeta from '../../components/PhotoMeta.jsx';
 
 const STATUS_LABELS = {
   published: 'Email verificata',
@@ -11,6 +12,102 @@ function fmt(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
 }
+
+/* ── Modal ───────────────────────────────────────────────────────────────── */
+
+function PhotoModal({ id, onClose, onReload }) {
+  const [photo, setPhoto] = useState(null);
+  const [acting, setActing] = useState(false);
+
+  useEffect(() => {
+    setPhoto(null);
+    adminApi.getImage(id).then(setPhoto).catch(() => onClose());
+  }, [id, onClose]);
+
+  // Close on Escape
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose(); }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  async function handleValidate() {
+    setActing(true);
+    try { await adminApi.validateImage(id); onReload(); onClose(); }
+    catch (e) { alert(`Errore: ${e.message}`); setActing(false); }
+  }
+
+  async function handleInvalidate() {
+    setActing(true);
+    try { await adminApi.invalidateImage(id); onReload(); onClose(); }
+    catch (e) { alert(`Errore: ${e.message}`); setActing(false); }
+  }
+
+  return (
+    <div className="admin-modal-overlay" onClick={onClose}>
+      <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="admin-modal__close" onClick={onClose} aria-label="Chiudi">✕</button>
+
+        {!photo ? (
+          <div className="admin-loading" style={{ minHeight: 200 }}>Caricamento…</div>
+        ) : (
+          <>
+            <div className="admin-modal__img-wrap">
+              <a href={photo.original_url} target="_blank" rel="noopener noreferrer">
+                <img src={photo.medium_url || photo.thumb_url} alt={photo.titolo || ''} className="admin-modal__img" />
+              </a>
+            </div>
+
+            <div className="admin-modal__body">
+              <div className="admin-modal__badges">
+                <span className={`admin-badge ${photo.status === 'published' ? 'admin-badge--ok' : photo.status === 'pending_verification' ? 'admin-badge--warn' : 'admin-badge--neutral'}`}>
+                  {STATUS_LABELS[photo.status] || photo.status}
+                </span>
+                {photo.validated_at
+                  ? <span className="admin-badge admin-badge--ok" title={`Validata da ${photo.validated_by} il ${fmt(photo.validated_at)}`}>Validata ✓</span>
+                  : <span className="admin-badge admin-badge--neutral">Non validata</span>}
+              </div>
+
+              <PhotoMeta
+                titolo={photo.titolo}
+                caption={photo.caption}
+                autoreName={photo.autore_nome}
+                dataScatto={photo.data_scatto}
+                stageRef={photo.stage_ref}
+                distanceM={photo.stage_distance_m}
+                lat={photo.lat}
+                lng={photo.lng}
+                regione={photo.regione}
+                provincia={photo.provincia}
+                comune={photo.comune}
+              />
+
+              <p style={{ fontSize: 12, color: '#888', marginTop: 12 }}>
+                Email: {photo.email || '—'} · Caricata: {fmt(photo.created_at)}
+              </p>
+
+              <div className="admin-modal__actions">
+                {photo.status === 'published' && !photo.validated_at && (
+                  <button className="admin-btn admin-btn--success" onClick={handleValidate} disabled={acting}>
+                    {acting ? '…' : 'Valida'}
+                  </button>
+                )}
+                {photo.validated_at && (
+                  <button className="admin-btn" onClick={handleInvalidate} disabled={acting}>
+                    {acting ? '…' : 'Revoca validazione'}
+                  </button>
+                )}
+                <button className="admin-btn" onClick={onClose}>Chiudi</button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Main page ───────────────────────────────────────────────────────────── */
 
 export default function AdminPhotos() {
   const [data, setData]         = useState(null);
@@ -24,6 +121,7 @@ export default function AdminPhotos() {
   const [page, setPage]         = useState(1);
   const [error, setError]       = useState('');
   const [acting, setActing]     = useState(null);
+  const [modalId, setModalId]   = useState(null);
   const debQ    = useRef(null);
   const debMail = useRef(null);
 
@@ -31,12 +129,11 @@ export default function AdminPhotos() {
     adminApi.facets().then(setFacets).catch(() => {});
   }, []);
 
-  function load(opts) {
+  const load = useCallback((opts) => {
     setError('');
     adminApi.images(opts).then(setData).catch((e) => setError(e.message));
-  }
+  }, []);
 
-  // Reload when discrete filters change
   useEffect(() => {
     load({ status, validated, q, email, stage_ref: stageRef, regione, page });
   }, [status, validated, stageRef, regione, page]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -81,14 +178,25 @@ export default function AdminPhotos() {
     finally { setActing(null); }
   }
 
+  const reloadCurrent = useCallback(() => {
+    load({ status, validated, q, email, stage_ref: stageRef, regione, page });
+  }, [load, status, validated, q, email, stageRef, regione, page]);
+
   const totalPages = data ? Math.ceil(data.total / data.page_size) : 1;
 
   return (
     <div>
+      {modalId && (
+        <PhotoModal
+          id={modalId}
+          onClose={() => setModalId(null)}
+          onReload={reloadCurrent}
+        />
+      )}
+
       <h2 className="admin-page-title">Foto {data ? `(${data.total})` : ''}</h2>
 
       <div className="admin-filters-grid">
-        {/* Row 1 – stato email + validazione */}
         <label className="admin-filter-label">
           <span>Stato email</span>
           <select value={status} onChange={(e) => handleDiscreteChange(setStatus, e.target.value)} className="admin-select">
@@ -109,7 +217,6 @@ export default function AdminPhotos() {
           </select>
         </label>
 
-        {/* Row 2 – tappa + regione */}
         <label className="admin-filter-label">
           <span>Tappa</span>
           <select value={stageRef} onChange={(e) => handleDiscreteChange(setStageRef, e.target.value)} className="admin-select">
@@ -126,7 +233,6 @@ export default function AdminPhotos() {
           </select>
         </label>
 
-        {/* Row 3 – testo + email */}
         <label className="admin-filter-label">
           <span>Cerca titolo / autore</span>
           <input type="search" placeholder="Titolo, autore…" value={q} onChange={handleQChange} className="admin-search" />
@@ -166,9 +272,15 @@ export default function AdminPhotos() {
                     {data.items.map((img) => (
                       <tr key={img.id}>
                         <td>
-                          {img.thumb_url
-                            ? <img src={img.thumb_url} alt="" className="admin-thumb" />
-                            : <div className="admin-thumb admin-thumb--empty" />}
+                          <button
+                            className="admin-thumb-btn"
+                            onClick={() => setModalId(img.id)}
+                            title="Apri dettaglio"
+                          >
+                            {img.thumb_url
+                              ? <img src={img.thumb_url} alt="" className="admin-thumb" />
+                              : <div className="admin-thumb admin-thumb--empty" />}
+                          </button>
                         </td>
                         <td>
                           {img.status === 'published' && img.validated_at

@@ -86,6 +86,8 @@ export const adminApi = {
     return adminRequest(`/images${suffix}`);
   },
 
+  getImage: (id) => adminRequest(`/images/${id}`),
+
   deleteImage: (id) =>
     adminRequest(`/images/${id}`, { method: 'DELETE' }),
 

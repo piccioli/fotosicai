@@ -149,6 +149,26 @@ router.get('/images', requireAdmin, (req, res) => {
   res.json({ items, total, page, page_size: PAGE_SIZE });
 });
 
+// GET /api/admin/images/:id
+router.get('/images/:id', requireAdmin, (req, res) => {
+  const db = getDb();
+  const img = db.prepare(`
+    SELECT id, status, thumbnail_path, medium_path, file_path,
+           titolo, caption, autore_nome, email,
+           stage_ref, stage_distance_m, regione, provincia, comune,
+           lat, lng, data_scatto, created_at,
+           validated_at, validated_by
+    FROM images WHERE id = ?
+  `).get(req.params.id);
+  if (!img) return res.status(404).json({ error: 'Immagine non trovata' });
+  res.json({
+    ...img,
+    thumb_url:    img.thumbnail_path ? `/storage/${img.thumbnail_path}` : null,
+    medium_url:   img.medium_path    ? `/storage/${img.medium_path}`    : null,
+    original_url: img.file_path      ? `/storage/${img.file_path}`      : null,
+  });
+});
+
 // POST /api/admin/images/:id/validate
 router.post('/images/:id/validate', requireAdmin, (req, res) => {
   const db = getDb();
