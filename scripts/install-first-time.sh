@@ -78,8 +78,9 @@ fi
 
 DOMAIN="$(prompt_default "Dominio produzione (FQDN)" "fotosicai.montagnaservizi.it")"
 PUBLIC_BASE_URL="$(prompt_default "PUBLIC_BASE_URL" "https://$DOMAIN")"
+FRONTEND_HOST_PORT="$(prompt_default "Porta host frontend (evita porte occupate, es. 8081)" "8080")"
 ACME_WEBROOT="$(prompt_default "Path ACME webroot" "/var/www/acme-fotosicai")"
-UPSTREAM_URL="$(prompt_default "Upstream Apache -> frontend" "http://127.0.0.1:8080/")"
+UPSTREAM_URL="$(prompt_default "Upstream Apache -> frontend" "http://127.0.0.1:${FRONTEND_HOST_PORT}/")"
 LETSENCRYPT_EMAIL="$(prompt_default "Email Let's Encrypt" "admin@$DOMAIN")"
 NOMINATIM_USER_AGENT="$(prompt_default "NOMINATIM_USER_AGENT" "fotosicai/1.0 ($LETSENCRYPT_EMAIL)")"
 
@@ -92,6 +93,7 @@ if [[ -z "$ANTHROPIC_API_KEY" || -z "$ADMIN_TOKEN" ]]; then
 fi
 
 upsert_env "PUBLIC_BASE_URL" "$PUBLIC_BASE_URL" "$ENV_FILE"
+upsert_env "FRONTEND_HOST_PORT" "$FRONTEND_HOST_PORT" "$ENV_FILE"
 upsert_env "NOMINATIM_USER_AGENT" "$NOMINATIM_USER_AGENT" "$ENV_FILE"
 upsert_env "ANTHROPIC_API_KEY" "$ANTHROPIC_API_KEY" "$ENV_FILE"
 upsert_env "ADMIN_TOKEN" "$ADMIN_TOKEN" "$ENV_FILE"
@@ -128,4 +130,5 @@ echo
 echo "Installazione completata."
 echo "Dominio: $DOMAIN"
 echo "PUBLIC_BASE_URL: $PUBLIC_BASE_URL"
+echo "FRONTEND_HOST_PORT: $FRONTEND_HOST_PORT"
 echo "File env: $ENV_FILE"

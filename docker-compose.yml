@@ -37,6 +37,6 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - "127.0.0.1:8080:80"
+      - "127.0.0.1:${FRONTEND_HOST_PORT:-8080}:80"
     volumes:
       - ./storage:/usr/share/nginx/html/storage:ro

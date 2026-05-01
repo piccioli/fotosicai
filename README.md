@@ -65,7 +65,8 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Il container frontend resta esposto su `127.0.0.1:8080` e va pubblicato via reverse proxy.
+Il container frontend è esposto su `127.0.0.1:${FRONTEND_HOST_PORT}` (default `8080`) e va pubblicato via reverse proxy.
+Se `8080` è occupata, imposta ad esempio `FRONTEND_HOST_PORT=8081` in `.env`.
 
 ### HTTPS con Apache (template committati)
 
@@ -85,7 +86,7 @@ cp apache/vhost-https.example.conf apache/fotosicai.montagnaservizi.it.conf
 In alternativa puoi generare i file con lo script:
 
 ```bash
-scripts/render-apache-vhost.sh fotosicai.montagnaservizi.it /var/www/acme-fotosicai http://127.0.0.1:8080/
+scripts/render-apache-vhost.sh fotosicai.montagnaservizi.it /var/www/acme-fotosicai http://127.0.0.1:8081/
 ```
 
 Per una prima installazione completa (wizard interattivo: `.env`, Docker, Apache, Certbot):
@@ -95,13 +96,14 @@ scripts/install-first-time.sh
 ```
 
 Lo script richiede i comandi `docker`, `certbot`, `sudo`, `apache2ctl` e abilita i moduli Apache necessari.
+Durante il wizard ti chiede anche la porta host frontend (`FRONTEND_HOST_PORT`) e adatta automaticamente l'upstream Apache.
 
 ```apache
 <VirtualHost *:443>
   ServerName <dominio-produzione>
   ProxyPreserveHost On
-  ProxyPass / http://127.0.0.1:8080/
-  ProxyPassReverse / http://127.0.0.1:8080/
+  ProxyPass / http://127.0.0.1:<FRONTEND_HOST_PORT>/
+  ProxyPassReverse / http://127.0.0.1:<FRONTEND_HOST_PORT>/
   # ... SSLCertificateFile ecc.
 </VirtualHost>
 ```
@@ -126,6 +128,7 @@ Vedi `.env.example` per la lista completa.
 | `STAGE_MAX_DISTANCE_M` | `2000` | Raggio massimo (m) per associazione tappa |
 | `CONSENT_VERSION` | `2026-04-30` | Versione documento consenso |
 | `PUBLIC_BASE_URL` | `http://localhost:8080` | Base URL pubblica per link immagini |
+| `FRONTEND_HOST_PORT` | `8080` | Porta host locale mappata sulla porta 80 del container frontend |
 
 ---
 
