@@ -40,6 +40,7 @@ export default function AdminLayout() {
             Foto
           </NavLink>
         </nav>
+        <a href="/" className="admin-logout-btn" style={{ textAlign: 'center', textDecoration: 'none', display: 'block' }}>← Mappa</a>
         <button className="admin-logout-btn" onClick={logout}>Esci</button>
       </aside>
       <main className="admin-content">

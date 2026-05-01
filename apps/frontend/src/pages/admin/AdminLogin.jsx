@@ -53,6 +53,7 @@ export default function AdminLogin() {
         <button type="submit" className="admin-btn admin-btn--primary" disabled={loading}>
           {loading ? 'Accesso…' : 'Accedi'}
         </button>
+        <a href="/" style={{ textAlign: 'center', fontSize: 13, color: '#888' }}>← Torna alla mappa</a>
       </form>
     </div>
   );
