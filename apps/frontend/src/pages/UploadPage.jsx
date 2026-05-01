@@ -328,22 +328,37 @@ export default function UploadPage() {
             />
           </div>
 
-          {aiLoading && <p style={{ fontSize: 13, color: '#555', marginBottom: 12 }}><span className="loading-dots">Claude sta analizzando l'immagine</span></p>}
-          {aiError && <p style={{ fontSize: 13, color: '#aa6600', marginBottom: 12 }}>AI non disponibile — inserisci titolo e descrizione manualmente.</p>}
-          <div className="field">
-            <label>Titolo * <span style={{ color: '#888', fontWeight: 400 }}>(max 60 caratteri)</span></label>
-            <input type="text" value={titolo} onChange={(e) => setTitolo(e.target.value)} maxLength={60} placeholder="Titolo della foto..." />
-            <div className="hint">{titolo.length}/60</div>
-          </div>
-          <div className="field">
-            <label>Descrizione <span style={{ color: '#888', fontWeight: 400 }}>(max 280 caratteri)</span></label>
-            <textarea value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={280} placeholder="Descrizione della foto..." />
-            <div className="hint">{caption.length}/280</div>
-          </div>
-          <div className="btn-row">
-            <button className="btn btn-secondary" onClick={() => setStep(1)}>Indietro</button>
-            <button className="btn btn-primary" disabled={!titolo.trim()} onClick={() => setStep(3)}>Avanti</button>
-          </div>
+          {aiLoading && (
+            <div className="ai-loading-block">
+              <div className="ai-loading-spinner" />
+              <p className="ai-loading-label">Il motore AI Claude sta analizzando la foto…</p>
+              <p className="ai-loading-sub">Generazione di titolo e descrizione in corso, potrai modificarli a tuo piacimento</p>
+            </div>
+          )}
+
+          {!aiLoading && (
+            <>
+              {aiError && (
+                <div className="ai-error-block">
+                  AI non disponibile — inserisci titolo e descrizione manualmente.
+                </div>
+              )}
+              <div className="field">
+                <label>Titolo * <span style={{ color: '#888', fontWeight: 400 }}>(max 60 caratteri)</span></label>
+                <input type="text" value={titolo} onChange={(e) => setTitolo(e.target.value)} maxLength={60} placeholder="Titolo della foto..." />
+                <div className="hint">{titolo.length}/60</div>
+              </div>
+              <div className="field">
+                <label>Descrizione <span style={{ color: '#888', fontWeight: 400 }}>(max 280 caratteri)</span></label>
+                <textarea value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={280} placeholder="Descrizione della foto..." />
+                <div className="hint">{caption.length}/280</div>
+              </div>
+              <div className="btn-row">
+                <button className="btn btn-secondary" onClick={() => setStep(1)}>Indietro</button>
+                <button className="btn btn-primary" disabled={!titolo.trim()} onClick={() => setStep(3)}>Avanti</button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
