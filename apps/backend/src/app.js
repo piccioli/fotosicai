@@ -22,6 +22,7 @@ function createApp() {
   app.use('/api/stages', require('./routes/stages'));
   app.use('/api/legal', require('./routes/legal'));
   app.use('/api/admin', require('./routes/admin'));
+  app.use('/api/geocode', require('./routes/geocode'));
 
   app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

@@ -17,6 +17,7 @@ export default function UploadPage() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [exifGps, setExifGps] = useState(null);
   const [exifDatetime, setExifDatetime] = useState(null);
+  const [exifGeoInfo, setExifGeoInfo] = useState(null); // {regione, provincia, comune}
   const [autoreName, setAutoreName] = useState('');
   const [position, setPosition] = useState(null); // {lat, lng}
   const [draft, setDraft] = useState(null); // response from POST /api/upload
@@ -36,12 +37,20 @@ export default function UploadPage() {
     setFile(f);
     setPreviewUrl(URL.createObjectURL(f));
     setError(null);
+    setExifGps(null);
+    setExifGeoInfo(null);
     // Parse EXIF client-side for GPS preview
     try {
       const data = await Exifr.parse(f, { gps: true });
       if (data?.latitude && data?.longitude) {
-        setExifGps({ lat: data.latitude, lng: data.longitude });
-        setPosition({ lat: data.latitude, lng: data.longitude });
+        const gps = { lat: data.latitude, lng: data.longitude };
+        setExifGps(gps);
+        setPosition(gps);
+        // Reverse geocode via backend (usa cache Nominatim)
+        fetch(`/api/geocode?lat=${gps.lat}&lng=${gps.lng}`)
+          .then((r) => r.ok ? r.json() : null)
+          .then((geo) => { if (geo) setExifGeoInfo(geo); })
+          .catch(() => {});
       }
       if (data?.DateTimeOriginal) {
         const raw = String(data.DateTimeOriginal);
@@ -143,9 +152,16 @@ export default function UploadPage() {
           </div>
           {previewUrl && <img className="preview-img" src={previewUrl} alt="Anteprima" />}
           {exifGps && (
-            <p style={{ marginTop: 10, fontSize: 13 }}>
+            <div style={{ marginTop: 10, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span className="tag success">GPS rilevato: {exifGps.lat.toFixed(5)}, {exifGps.lng.toFixed(5)}</span>
-            </p>
+              {exifGeoInfo ? (
+                <span className="tag">
+                  {[exifGeoInfo.regione, exifGeoInfo.provincia, exifGeoInfo.comune].filter(Boolean).join(' › ')}
+                </span>
+              ) : (
+                <span className="tag" style={{ color: '#888' }}>Identificazione luogo…</span>
+              )}
+            </div>
           )}
           {!exifGps && file && (
             <p style={{ marginTop: 10, fontSize: 13 }}>
