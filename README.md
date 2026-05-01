@@ -53,7 +53,10 @@ Il backend è su `http://localhost:3000/api`.
 
 ```bash
 cp .env.example .env
-# Modifica .env: ANTHROPIC_API_KEY, ADMIN_TOKEN, PUBLIC_BASE_URL, NOMINATIM_USER_AGENT
+# Modifica SOLO file non committati (.env / .env.production.local)
+# Valori minimi: ANTHROPIC_API_KEY, ADMIN_TOKEN, PUBLIC_BASE_URL, NOMINATIM_USER_AGENT
+# Esempio:
+# PUBLIC_BASE_URL=https://fotosicai.montagnaservizi.it
 ```
 
 ### Avvio
@@ -62,15 +65,40 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-L'app è raggiungibile su `http://localhost:8080` (o tramite reverse proxy).
+Il container frontend resta esposto su `127.0.0.1:8080` e va pubblicato via reverse proxy.
 
-### HTTPS con Apache (sicai-foto.montagnaservizi.it)
+### HTTPS con Apache (template committati)
 
-Il container frontend è esposto solo su `127.0.0.1:8080`. Usa Apache come reverse proxy:
+Nel repository trovi due template di esempio:
+- `apache/vhost-80-only.example.conf` (prima del certificato TLS)
+- `apache/vhost-https.example.conf` (redirect 80->443 + TLS + reverse proxy)
+
+I file reali di produzione (`apache/*.conf`) non vanno committati: sono ignorati da git.
+Procedura consigliata:
+
+```bash
+cp apache/vhost-80-only.example.conf apache/fotosicai.montagnaservizi.it-80-only.conf
+cp apache/vhost-https.example.conf apache/fotosicai.montagnaservizi.it.conf
+# poi sostituisci: __PROD_DOMAIN__, __ACME_WEBROOT__, __UPSTREAM_URL__
+```
+
+In alternativa puoi generare i file con lo script:
+
+```bash
+scripts/render-apache-vhost.sh fotosicai.montagnaservizi.it /var/www/acme-fotosicai http://127.0.0.1:8080/
+```
+
+Per una prima installazione completa (wizard interattivo: `.env`, Docker, Apache, Certbot):
+
+```bash
+scripts/install-first-time.sh
+```
+
+Lo script richiede i comandi `docker`, `certbot`, `sudo`, `apache2ctl` e abilita i moduli Apache necessari.
 
 ```apache
 <VirtualHost *:443>
-  ServerName sicai-foto.montagnaservizi.it
+  ServerName <dominio-produzione>
   ProxyPreserveHost On
   ProxyPass / http://127.0.0.1:8080/
   ProxyPassReverse / http://127.0.0.1:8080/
@@ -78,7 +106,7 @@ Il container frontend è esposto solo su `127.0.0.1:8080`. Usa Apache come rever
 </VirtualHost>
 ```
 
-Imposta anche `PUBLIC_BASE_URL=https://sicai-foto.montagnaservizi.it` nel file `.env`.
+Imposta `PUBLIC_BASE_URL=https://fotosicai.montagnaservizi.it` nel file `.env` (non committato).
 
 ---
 

@@ -28,6 +28,10 @@ db/*.sqlite-wal
 # Uploaded/generated media
 storage/foto/
 
+# Apache vhost runtime files (keep templates committed)
+apache/*.conf
+!apache/*.example.conf
+
 
 # OS/editor noise
 .DS_Store
