@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet.markercluster';
 import { api } from '../lib/api.js';
@@ -8,7 +8,6 @@ const SICAI_TRACK_BASE = import.meta.env.VITE_SICAI_TRACK_BASE_URL || 'https://s
 const TILE_URL = import.meta.env.VITE_TILE_URL || 'https://api.webmapp.it/tiles/{z}/{x}/{y}.png';
 const TILE_ATTR = import.meta.env.VITE_TILE_ATTRIBUTION || '&copy; CAI &copy; OpenStreetMap';
 const GEOJSON_URL = '/DATA/data.geojson';
-const MARKER_ZOOM = 12;
 const ITALY_CENTER = [42.5, 12.5];
 const ITALY_ZOOM = 6;
 
@@ -16,9 +15,7 @@ export default function MapPage() {
   const mapRef = useRef(null);
   const leafletMap = useRef(null);
   const clusterGroup = useRef(null);
-  const [showZoomHint, setShowZoomHint] = useState(true);
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (leafletMap.current) return;
@@ -44,10 +41,6 @@ export default function MapPage() {
     const cluster = L.markerClusterGroup({ maxClusterRadius: 60, disableClusteringAtZoom: 16 });
     clusterGroup.current = cluster;
     map.addLayer(cluster);
-
-    const updateZoomHint = () => setShowZoomHint(map.getZoom() < MARKER_ZOOM);
-    map.on('zoomend', updateZoomHint);
-    updateZoomHint();
 
     loadMarkers(map, cluster);
 
@@ -120,9 +113,7 @@ export default function MapPage() {
   return (
     <div className="map-wrap">
       <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
-      {showZoomHint && (
-        <div className="map-zoom-hint">Ingrandisci la mappa per vedere le foto</div>
-      )}
+
       <style>{`.thumb-marker{width:44px;height:44px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);background-size:cover;background-position:center;}`}</style>
     </div>
   );
