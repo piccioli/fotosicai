@@ -153,8 +153,10 @@ export default function UploadPage() {
       .catch(() => setExifStage(null));
   }
 
+  const withinThreshold = exifStage === undefined || exifStage === null || !!exifStage?.stage_ref;
+
   const canProceedStep0 = !!file && autoreName.trim().length > 0;
-  const canProceedStep1 = !!position;
+  const canProceedStep1 = !!position && withinThreshold;
 
   return (
     <div className="upload-page">
@@ -228,6 +230,7 @@ export default function UploadPage() {
           <LocationPicker
             initialPosition={position || ITALY_CENTER}
             onChange={handlePositionChange}
+            withinThreshold={withinThreshold}
           />
           {position && (
             <div style={{ marginTop: 8, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 4 }}>

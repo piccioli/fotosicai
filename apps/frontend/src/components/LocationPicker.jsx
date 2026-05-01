@@ -7,16 +7,19 @@ const TILE_ATTR = '&copy; CAI &copy; OpenStreetMap';
 // Raggio del cerchio di riferimento (in metri), allineato al massimo dalla tappa — VITE_STAGE_MAX_DISTANCE_M nel .env
 const POSITION_CIRCLE_RADIUS_M = Number(import.meta.env.VITE_STAGE_MAX_DISTANCE_M) || 5000;
 
-const CIRCLE_STYLE = {
-  color: '#1a6bb5',
-  weight: 3,
-  opacity: 0.9,
-  fillColor: '#1a6bb5',
-  fillOpacity: 0.16,
+const CIRCLE_STYLE_OK = {
+  color: '#1a6bb5', weight: 3, opacity: 0.9,
+  fillColor: '#1a6bb5', fillOpacity: 0.16,
   interactive: false,
 };
 
-export default function LocationPicker({ initialPosition, onChange }) {
+const CIRCLE_STYLE_OUT = {
+  color: '#888', weight: 3, opacity: 0.9,
+  fillColor: '#888', fillOpacity: 0.16,
+  interactive: false,
+};
+
+export default function LocationPicker({ initialPosition, onChange, withinThreshold = true }) {
   const mapRef = useRef(null);
   const leafletRef = useRef(null);
   const markerRef = useRef(null);
@@ -56,7 +59,7 @@ export default function LocationPicker({ initialPosition, onChange }) {
 
     const circle = L.circle([initialPosition.lat, initialPosition.lng], {
       radius: POSITION_CIRCLE_RADIUS_M,
-      ...CIRCLE_STYLE,
+      ...CIRCLE_STYLE_OK,
     }).addTo(map);
     circleRef.current = circle;
 
@@ -85,7 +88,7 @@ export default function LocationPicker({ initialPosition, onChange }) {
     return () => { map.remove(); leafletRef.current = null; };
   }, []);
 
-  // Update marker and circle if initialPosition changes externally (e.g. GPS detected)
+  // Update marker and circle position when initialPosition changes externally
   useEffect(() => {
     if (!markerRef.current) return;
     markerRef.current.setLatLng([initialPosition.lat, initialPosition.lng]);
@@ -97,6 +100,11 @@ export default function LocationPicker({ initialPosition, onChange }) {
       );
     }
   }, [initialPosition.lat, initialPosition.lng]);
+
+  // Update circle color when threshold status changes
+  useEffect(() => {
+    circleRef.current?.setStyle(withinThreshold ? CIRCLE_STYLE_OK : CIRCLE_STYLE_OUT);
+  }, [withinThreshold]);
 
   return <div ref={mapRef} className="map-picker" />;
 }
