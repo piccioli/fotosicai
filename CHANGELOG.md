@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.1 - 2026-05-01
+
+### Fixed
+- Upload finalize now returns a clear user-facing error when verification email delivery fails.
+- Prevent images from remaining stuck in `pending_verification` if SMTP send fails by rolling them back to `draft`.
+
 ## v1.3.0 - 2026-05-01
 
 ### Added
