@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet.markercluster';
 import { api } from '../lib/api.js';
 
+const SICAI_TRACK_BASE = import.meta.env.VITE_SICAI_TRACK_BASE_URL || 'https://sentieroitalia.cai.it/track/si-';
 const TILE_URL = 'https://api.webmapp.it/tiles/{z}/{x}/{y}.png';
 const TILE_ATTR = '&copy; CAI &copy; OpenStreetMap';
 const GEOJSON_URL = '/DATA/data.geojson';
@@ -85,12 +86,20 @@ export default function MapPage() {
   }
 
   function buildPopupHtml(img) {
+    const stageRow = img.stage_ref
+      ? `<div class="photo-meta__row"><dt>Tappa SICAI:</dt><dd><a href="${SICAI_TRACK_BASE}${escHtml(img.stage_ref.toLowerCase())}/" target="_blank" rel="noopener noreferrer">[${escHtml(img.stage_ref)}]</a></dd></div>`
+      : '';
+    const dateRow = img.data_scatto
+      ? `<div class="photo-meta__row"><dt>Data dello scatto:</dt><dd>${escHtml(new Date(img.data_scatto).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }))}</dd></div>`
+      : '';
     return `<div class="photo-popup">
       <img src="${img.thumb_url}" alt="${escHtml(img.titolo)}" onclick="window.location='/foto/${img.id}'" />
-      <h3>${escHtml(img.titolo)}</h3>
-      ${img.stage_ref ? `<p><strong>Tappa:</strong> ${escHtml(img.stage_ref)}</p>` : ''}
-      ${img.data_scatto ? `<p>${escHtml(new Date(img.data_scatto).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }))}</p>` : ''}
-      <a href="/foto/${img.id}">Visualizza</a>
+      <dl class="photo-meta" style="margin-bottom:8px">
+        <div class="photo-meta__row"><dt>Titolo:</dt><dd>${escHtml(img.titolo)}</dd></div>
+        ${stageRow}
+        ${dateRow}
+      </dl>
+      <a href="/foto/${img.id}">Visualizza →</a>
     </div>`;
   }
 

@@ -183,5 +183,10 @@ button { cursor: pointer; }
 .photo-detail { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
 .photo-detail img { width: 100%; border-radius: 8px; margin-bottom: 20px; }
 .photo-detail h1 { font-size: 1.5rem; margin-bottom: 8px; }
-.photo-detail .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; font-size: 13px; }
-.meta-item label { font-weight: 600; color: #555; }
+
+/* Shared metadata block */
+.photo-meta { font-size: 13px; line-height: 1.6; margin: 0; }
+.photo-meta__row { display: flex; gap: 10px; padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
+.photo-meta__row:last-child { border-bottom: none; }
+.photo-meta dt { font-weight: 600; color: #555; min-width: 140px; flex-shrink: 0; }
+.photo-meta dd { margin: 0; color: #333; }

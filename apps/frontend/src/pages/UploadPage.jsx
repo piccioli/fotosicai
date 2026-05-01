@@ -4,6 +4,7 @@ import * as Exifr from 'exifr';
 import { api } from '../lib/api.js';
 import LocationPicker from '../components/LocationPicker.jsx';
 import ConsentText from '../components/ConsentText.jsx';
+import PhotoMeta from '../components/PhotoMeta.jsx';
 
 function IconExpand() {
   return (
@@ -360,19 +361,17 @@ export default function UploadPage() {
               alt="Anteprima"
               style={{ width: 110, height: 82, objectFit: 'cover', borderRadius: 6, flexShrink: 0, border: '1px solid #eee', background: '#000' }}
             />
-            <div style={{ fontSize: 13, lineHeight: 1.8, color: '#444' }}>
-              {autoreName && <div><strong>Autore:</strong> {autoreName}</div>}
-              {exifDatetime && (
-                <div><strong>Data:</strong> {new Date(exifDatetime).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-              )}
-              {position && <div><strong>Posizione:</strong> {position.lat.toFixed(5)}, {position.lng.toFixed(5)}</div>}
-              {(draft?.suggested?.regione || draft?.suggested?.provincia || draft?.suggested?.comune) && (
-                <div><strong>Luogo:</strong> {[draft.suggested.regione, draft.suggested.provincia, draft.suggested.comune].filter(Boolean).join(' › ')}</div>
-              )}
-              {draft?.suggested?.stage?.stage_ref && (
-                <div><strong>Tappa SICAI:</strong> {draft.suggested.stage.stage_ref}</div>
-              )}
-            </div>
+            <PhotoMeta
+              autoreName={autoreName}
+              dataScatto={exifDatetime}
+              stageRef={draft?.suggested?.stage?.stage_ref}
+              distanceM={draft?.suggested?.stage?.distance_m}
+              lat={position?.lat}
+              lng={position?.lng}
+              regione={draft?.suggested?.regione}
+              provincia={draft?.suggested?.provincia}
+              comune={draft?.suggested?.comune}
+            />
           </div>
 
           {aiLoading && <p style={{ fontSize: 13, color: '#555', marginBottom: 12 }}><span className="loading-dots">Claude sta analizzando l'immagine</span></p>}
@@ -420,17 +419,20 @@ export default function UploadPage() {
       {step === 4 && (
         <div className="step-card">
           <h2>Riepilogo e conferma</h2>
-          {previewUrl && <img className="preview-img" src={previewUrl} alt="Anteprima" style={{ maxHeight: 200 }} />}
-          <div style={{ marginTop: 14, fontSize: 14, lineHeight: 1.7 }}>
-            <p><strong>Titolo:</strong> {titolo}</p>
-            {caption && <p><strong>Descrizione:</strong> {caption}</p>}
-            <p><strong>Autore:</strong> {autoreName}</p>
-            {position && <p><strong>Posizione:</strong> {position.lat.toFixed(5)}, {position.lng.toFixed(5)}</p>}
-            {draft?.suggested?.stage?.stage_ref && <p><strong>Tappa SICAI:</strong> {draft.suggested.stage.stage_ref}</p>}
-            {draft?.suggested?.regione && <p><strong>Regione:</strong> {draft.suggested.regione}</p>}
-            {draft?.suggested?.provincia && <p><strong>Provincia:</strong> {draft.suggested.provincia}</p>}
-            {draft?.suggested?.comune && <p><strong>Comune:</strong> {draft.suggested.comune}</p>}
-          </div>
+          {previewUrl && <img className="preview-img" src={previewUrl} alt="Anteprima" style={{ maxHeight: 200, marginBottom: 16 }} />}
+          <PhotoMeta
+            titolo={titolo}
+            caption={caption}
+            autoreName={autoreName}
+            dataScatto={exifDatetime}
+            stageRef={draft?.suggested?.stage?.stage_ref}
+            distanceM={draft?.suggested?.stage?.distance_m}
+            lat={position?.lat}
+            lng={position?.lng}
+            regione={draft?.suggested?.regione}
+            provincia={draft?.suggested?.provincia}
+            comune={draft?.suggested?.comune}
+          />
           <div className="btn-row" style={{ marginTop: 20 }}>
             <button className="btn btn-secondary" onClick={() => setStep(3)}>Indietro</button>
             <button className="btn btn-primary" disabled={submitting} onClick={handleFinalize}>

@@ -14,6 +14,9 @@ COPY apps/frontend ./apps/frontend
 ARG VITE_STAGE_MAX_DISTANCE_M=5000
 ENV VITE_STAGE_MAX_DISTANCE_M=$VITE_STAGE_MAX_DISTANCE_M
 
+ARG VITE_SICAI_TRACK_BASE_URL=https://sentieroitalia.cai.it/track/si-
+ENV VITE_SICAI_TRACK_BASE_URL=$VITE_SICAI_TRACK_BASE_URL
+
 RUN npm run build --workspace=apps/frontend
 
 # Production: nginx serves built assets

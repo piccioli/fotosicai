@@ -28,6 +28,7 @@ services:
       dockerfile: Dockerfile.frontend
       args:
         VITE_STAGE_MAX_DISTANCE_M: ${VITE_STAGE_MAX_DISTANCE_M:-5000}
+        VITE_SICAI_TRACK_BASE_URL: ${VITE_SICAI_TRACK_BASE_URL:-https://sentieroitalia.cai.it/track/si-}
     restart: unless-stopped
     depends_on:
       backend:
