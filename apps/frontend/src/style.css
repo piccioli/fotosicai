@@ -13,13 +13,36 @@ button { cursor: pointer; }
 }
 .app-header__logo { height: 36px; width: auto; display: block; }
 .app-header__title { font-weight: 700; font-size: 1.1rem; color: #cc0000; }
-.app-header__nav { display: flex; gap: 4px; margin-left: auto; }
-.app-header__nav a {
-  padding: 6px 14px; border-radius: 6px; font-size: 0.9rem; color: #444;
-  transition: background .15s;
+.app-header__nav { display: flex; gap: 2px; margin-left: auto; align-items: center; }
+.app-header__nav a,
+.nav-icon-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 8px;
+  color: #555; background: none; border: none;
+  transition: background .15s, color .15s;
 }
-.app-header__nav a:hover { background: #f0f0f0; text-decoration: none; }
-.app-header__nav a.active { background: #cc0000; color: #fff; font-weight: 600; }
+.app-header__nav a:hover,
+.nav-icon-btn:hover { background: #f0f0f0; color: #222; text-decoration: none; }
+.app-header__nav a.active { background: #cc0000; color: #fff; }
+
+/* Info popup */
+.info-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+}
+.info-popup {
+  background: #fff; border-radius: 12px; padding: 28px 28px 24px;
+  max-width: 360px; width: 90%; position: relative;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+  text-align: center;
+}
+.info-popup__close {
+  position: absolute; top: 12px; right: 14px;
+  background: none; border: none; font-size: 22px;
+  color: #888; line-height: 1;
+}
+.info-popup__close:hover { color: #222; }
 
 .app-main { margin-top: 52px; height: calc(100vh - 52px); }
 
