@@ -37,7 +37,8 @@ export default function UploadPage() {
   const [exifDatetime, setExifDatetime] = useState(null);
   const [exifGeoInfo, setExifGeoInfo] = useState(null); // {regione, provincia, comune}
   const [exifStage, setExifStage] = useState(undefined); // {stage_ref, distance_m} | null | undefined(loading)
-  const [autoreName, setAutoreName] = useState('');
+  const [autoreName, setAutoreName] = useState(() => localStorage.getItem('fotosicai_autore') || '');
+  const [rememberName, setRememberName] = useState(() => !!localStorage.getItem('fotosicai_autore'));
   const [position, setPosition] = useState(null); // {lat, lng}
   const [draft, setDraft] = useState(null); // response from POST /api/upload
   const [titolo, setTitolo] = useState('');
@@ -225,8 +226,27 @@ export default function UploadPage() {
             <label>Il tuo nome / Autore *</label>
             <input type="text" placeholder="Nome Cognome" value={autoreName} onChange={(e) => setAutoreName(e.target.value)} maxLength={80} />
           </div>
+          <div className="checkbox-row" style={{ marginBottom: 4 }}>
+            <input
+              type="checkbox"
+              id="remember-name"
+              checked={rememberName}
+              onChange={(e) => setRememberName(e.target.checked)}
+            />
+            <label htmlFor="remember-name" style={{ fontSize: 13, color: '#555' }}>
+              Ricorda il mio nome per i prossimi caricamenti
+            </label>
+          </div>
           <div className="btn-row">
-            <button className="btn btn-primary" disabled={!canProceedStep0} onClick={() => setStep(1)}>
+            <button
+              className="btn btn-primary"
+              disabled={!canProceedStep0}
+              onClick={() => {
+                if (rememberName) localStorage.setItem('fotosicai_autore', autoreName.trim());
+                else localStorage.removeItem('fotosicai_autore');
+                setStep(1);
+              }}
+            >
               Avanti
             </button>
           </div>
