@@ -77,6 +77,8 @@ function InfoPopup({ onClose }) {
         <div style={{ fontSize: 11, color: '#aaa', borderTop: '1px solid #eee', paddingTop: 10, marginTop: 8, lineHeight: 1.5 }}>
           Software: FotoSICAI v{__APP_VERSION__} — licenza{' '}
           <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT</a>
+          {' — '}
+          <a href="https://github.com/piccioli/fotosicai" target="_blank" rel="noopener noreferrer">codice sorgente</a>
         </div>
       </div>
     </div>
