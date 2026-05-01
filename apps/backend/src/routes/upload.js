@@ -222,7 +222,34 @@ router.post('/:id/finalize', async (req, res, next) => {
       aiGenerated, consentVer, now, img.id
     );
 
-    await sendVerificationEmail({ to: email, photoId: img.id, token, titolo: finalTitolo });
+    try {
+      await sendVerificationEmail({ to: email, photoId: img.id, token, titolo: finalTitolo });
+    } catch (mailErr) {
+      // Keep data coherent: if the email cannot be sent, avoid leaving the photo stuck in pending state.
+      db.prepare(
+        `UPDATE images SET
+          status = 'draft',
+          verification_token = NULL,
+          verification_sent_at = NULL
+         WHERE id = ?`
+      ).run(img.id);
+
+      const smtpRaw = (mailErr && mailErr.message) ? String(mailErr.message) : '';
+      const smtpMsg = smtpRaw.toLowerCase();
+      let userMessage = 'Invio email di conferma non riuscito. Riprova tra qualche minuto.';
+      if (smtpMsg.includes('timed out') || smtpMsg.includes('timeout') || smtpMsg.includes('etimedout')) {
+        userMessage = 'Timeout durante l\'invio dell\'email di conferma. Riprova tra qualche minuto.';
+      } else if (smtpMsg.includes('auth') || smtpMsg.includes('535') || smtpMsg.includes('eauth')) {
+        userMessage = 'Errore di autenticazione SMTP durante l\'invio dell\'email di conferma.';
+      } else if (smtpMsg.includes('enotfound') || smtpMsg.includes('eai_again')) {
+        userMessage = 'Server SMTP non raggiungibile al momento. Riprova tra qualche minuto.';
+      }
+
+      const err = new Error(userMessage);
+      err.status = 502;
+      err.cause = mailErr;
+      return next(err);
+    }
 
     res.json({ pending: true, id: img.id, email });
   } catch (err) {
