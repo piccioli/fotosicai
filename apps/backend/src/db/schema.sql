@@ -21,6 +21,10 @@ CREATE TABLE IF NOT EXISTS images (
   caption              TEXT NOT NULL DEFAULT '',
   ai_generated         INTEGER NOT NULL DEFAULT 1,
   autore_nome          TEXT NOT NULL DEFAULT '',
+  email                TEXT NOT NULL DEFAULT '',
+  verification_token   TEXT,
+  verification_sent_at TEXT,
+  verified_at          TEXT,
   consenso             INTEGER NOT NULL DEFAULT 0,
   consenso_version     TEXT NOT NULL DEFAULT '',
   consenso_accepted_at TEXT NOT NULL DEFAULT '',
@@ -53,6 +57,11 @@ CREATE TRIGGER IF NOT EXISTS images_ai_delete AFTER DELETE ON images BEGIN
   INSERT INTO images_fts(images_fts, rowid, titolo, caption, autore_nome, stage_ref)
   VALUES ('delete', old.rowid, old.titolo, old.caption, old.autore_nome, coalesce(old.stage_ref, ''));
 END;
+
+CREATE TABLE IF NOT EXISTS verified_emails (
+  email       TEXT PRIMARY KEY,
+  verified_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 
 CREATE TABLE IF NOT EXISTS nominatim_cache (
   geokey       TEXT PRIMARY KEY,

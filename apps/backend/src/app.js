@@ -17,6 +17,7 @@ function createApp() {
   app.use('/DATA', express.static(path.join(__dirname, '../../../DATA')));
 
   app.use('/api/upload', require('./routes/upload'));
+  app.use('/api/verify', require('./routes/verify'));
   app.use('/api/images', require('./routes/images'));
   app.use('/api/search', require('./routes/search'));
   app.use('/api/stages', require('./routes/stages'));

@@ -26,6 +26,7 @@ function IconCompress() {
 
 const STEPS = ['1. File', '2. Posizione', '3. Titolo & AI', '4. Consenso', '5. Conferma'];
 const ITALY_CENTER = { lat: 42.5, lng: 12.5 };
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function UploadPage() {
   const navigate = useNavigate();
@@ -40,6 +41,8 @@ export default function UploadPage() {
   const [exifStage, setExifStage] = useState(undefined); // {stage_ref, distance_m} | null | undefined(loading)
   const [autoreName, setAutoreName] = useState(() => localStorage.getItem('fotosicai_autore') || '');
   const [rememberName, setRememberName] = useState(() => !!localStorage.getItem('fotosicai_autore'));
+  const [email, setEmail] = useState(() => localStorage.getItem('fotosicai_email') || '');
+  const [rememberEmail, setRememberEmail] = useState(() => !!localStorage.getItem('fotosicai_email'));
   const [position, setPosition] = useState(null); // {lat, lng}
   const [draft, setDraft] = useState(null); // response from POST /api/upload
   const [titolo, setTitolo] = useState('');
@@ -47,10 +50,18 @@ export default function UploadPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [consent, setConsent] = useState(null); // {version, markdown}
-  const [consentAccepted, setConsentAccepted] = useState(false);
+  const [consentChecks, setConsentChecks] = useState({
+    readDocument: false,
+    acceptLicense: false,
+    rightsDeclaration: false,
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [mapFullscreen, setMapFullscreen] = useState(false);
+  const allConsentAccepted =
+    consentChecks.readDocument &&
+    consentChecks.acceptLicense &&
+    consentChecks.rightsDeclaration;
 
   // Step 0: pick file
   async function handleFileChange(e) {
@@ -96,6 +107,7 @@ export default function UploadPage() {
       const fd = new FormData();
       fd.append('file', file);
       fd.append('autore_nome', autoreName.trim() || 'Anonimo');
+      fd.append('email', email.trim().toLowerCase());
       if (position) {
         fd.append('lat', position.lat);
         fd.append('lng', position.lng);
@@ -137,7 +149,10 @@ export default function UploadPage() {
   }, [step]);
 
   async function handleFinalize() {
-    if (!consentAccepted) { setError('Devi accettare il consenso'); return; }
+    if (!allConsentAccepted) {
+      setError('Devi accettare tutti i consensi obbligatori');
+      return;
+    }
     if (!titolo.trim()) { setError('Il titolo è obbligatorio'); return; }
     setSubmitting(true);
     setError(null);
@@ -152,7 +167,11 @@ export default function UploadPage() {
         consenso_accepted: true,
         ai_generated: !aiError && !!titolo,
       });
-      navigate(`/?photo=${result.id}`);
+      if (result.published) {
+        navigate(result.url ? result.url.replace(/^https?:\/\/[^/]+/, '') : `/?photo=${result.id}&verified=1`);
+      } else {
+        navigate(`/upload/pending?email=${encodeURIComponent(result.email)}`);
+      }
     } catch (e) {
       setError(e.message);
     } finally {
@@ -176,7 +195,7 @@ export default function UploadPage() {
 
   const withinThreshold = exifStage === undefined || exifStage === null || !!exifStage?.stage_ref;
 
-  const canProceedStep0 = !!file && autoreName.trim().length > 0;
+  const canProceedStep0 = !!file && autoreName.trim().length > 0 && EMAIL_RE.test(email.trim());
   const canProceedStep1 = !!position && withinThreshold;
 
   return (
@@ -209,7 +228,7 @@ export default function UploadPage() {
             <label>Il tuo nome / Autore *</label>
             <input type="text" placeholder="Nome Cognome" value={autoreName} onChange={(e) => setAutoreName(e.target.value)} maxLength={80} />
           </div>
-          <div className="checkbox-row" style={{ marginBottom: 4 }}>
+          <div className="checkbox-row" style={{ marginBottom: 16 }}>
             <input
               type="checkbox"
               id="remember-name"
@@ -220,6 +239,30 @@ export default function UploadPage() {
               Ricorda il mio nome per i prossimi caricamenti
             </label>
           </div>
+          <div className="field">
+            <label>La tua email *</label>
+            <input
+              type="email"
+              placeholder="nome@esempio.it"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              maxLength={120}
+            />
+            <div className="hint" style={{ color: '#888' }}>
+              Riceverai un link per confermare e pubblicare la foto. Una volta verificata, l'email è ricordata per 30 giorni.
+            </div>
+          </div>
+          <div className="checkbox-row" style={{ marginBottom: 4 }}>
+            <input
+              type="checkbox"
+              id="remember-email"
+              checked={rememberEmail}
+              onChange={(e) => setRememberEmail(e.target.checked)}
+            />
+            <label htmlFor="remember-email" style={{ fontSize: 13, color: '#555' }}>
+              Ricorda la mia email per i prossimi caricamenti
+            </label>
+          </div>
           <div className="btn-row">
             <button
               className="btn btn-primary"
@@ -227,6 +270,8 @@ export default function UploadPage() {
               onClick={() => {
                 if (rememberName) localStorage.setItem('fotosicai_autore', autoreName.trim());
                 else localStorage.removeItem('fotosicai_autore');
+                if (rememberEmail) localStorage.setItem('fotosicai_email', email.trim().toLowerCase());
+                else localStorage.removeItem('fotosicai_email');
                 setStep(1);
               }}
             >
@@ -366,20 +411,48 @@ export default function UploadPage() {
       {step === 3 && (
         <div className="step-card">
           <h2>4. Consenso</h2>
+          <p className="consent-required-note">Tutti i consensi seguenti sono obbligatori per proseguire.</p>
           {consent ? (
             <ConsentText markdown={consent.markdown} />
           ) : (
             <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}><span className="loading-dots">Caricamento</span></p>
           )}
           <div className="checkbox-row">
-            <input type="checkbox" id="consent-check" checked={consentAccepted} onChange={(e) => setConsentAccepted(e.target.checked)} />
-            <label htmlFor="consent-check">
-              Ho letto e accetto il documento di consenso per l'utilizzo delle mie foto da parte di SICAI / Montagna Servizi.
+            <input
+              type="checkbox"
+              id="consent-read-document"
+              checked={consentChecks.readDocument}
+              onChange={(e) => setConsentChecks((prev) => ({ ...prev, readDocument: e.target.checked }))}
+            />
+            <label htmlFor="consent-read-document">
+              Dichiaro di aver letto integralmente il documento di consenso e autorizzazione.
+            </label>
+          </div>
+          <div className="checkbox-row" style={{ marginTop: 10 }}>
+            <input
+              type="checkbox"
+              id="consent-accept-license"
+              checked={consentChecks.acceptLicense}
+              onChange={(e) => setConsentChecks((prev) => ({ ...prev, acceptLicense: e.target.checked }))}
+            />
+            <label htmlFor="consent-accept-license">
+              Accetto che le fotografie siano pubblicate con licenza Creative Commons CC BY 4.0.
+            </label>
+          </div>
+          <div className="checkbox-row" style={{ marginTop: 10 }}>
+            <input
+              type="checkbox"
+              id="consent-rights-declaration"
+              checked={consentChecks.rightsDeclaration}
+              onChange={(e) => setConsentChecks((prev) => ({ ...prev, rightsDeclaration: e.target.checked }))}
+            />
+            <label htmlFor="consent-rights-declaration">
+              Dichiaro di essere titolare dei diritti sulle foto caricate e di avere eventuali liberatorie necessarie.
             </label>
           </div>
           <div className="btn-row" style={{ marginTop: 16 }}>
             <button className="btn btn-secondary" onClick={() => setStep(2)}>Indietro</button>
-            <button className="btn btn-primary" disabled={!consentAccepted} onClick={() => setStep(4)}>Avanti</button>
+            <button className="btn btn-primary" disabled={!allConsentAccepted} onClick={() => setStep(4)}>Avanti</button>
           </div>
         </div>
       )}
