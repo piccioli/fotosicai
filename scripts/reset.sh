@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "⚠️  Questo comando elimina TUTTO: database SQLite e immagini caricate."
 read -r -p "Sei sicuro? [s/N] " confirm
