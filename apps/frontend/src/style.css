@@ -65,13 +65,17 @@ button { cursor: pointer; }
 /* Upload wizard */
 .upload-page { max-width: 680px; margin: 0 auto; padding: 24px 16px; }
 .upload-page h1 { font-size: 1.4rem; margin-bottom: 8px; color: #cc0000; }
-.step-indicator { display: flex; gap: 4px; margin-bottom: 24px; }
+.step-indicator { display: flex; align-items: center; gap: 0; margin-bottom: 24px; }
 .step-indicator__dot {
-  flex: 1; height: 4px; border-radius: 2px; background: #ddd;
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  background: #ddd; font-size: 12px; font-weight: 700; color: #fff;
   transition: background .2s;
 }
 .step-indicator__dot.done { background: #cc0000; }
 .step-indicator__dot.active { background: #ff6666; }
+.step-indicator__line { flex: 1; height: 2px; background: #ddd; }
+.step-indicator__line.done { background: #cc0000; }
 
 .step-card {
   background: #fff; border-radius: 10px; padding: 24px;

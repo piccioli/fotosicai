@@ -24,7 +24,7 @@ function IconCompress() {
   );
 }
 
-const STEPS = ['File', 'Posizione', 'Titolo & AI', 'Consenso', 'Conferma'];
+const STEPS = ['1. File', '2. Posizione', '3. Titolo & AI', '4. Consenso', '5. Conferma'];
 const ITALY_CENTER = { lat: 42.5, lng: 12.5 };
 
 export default function UploadPage() {
@@ -182,14 +182,14 @@ export default function UploadPage() {
   return (
     <div className="upload-page">
       <h1>Carica una foto</h1>
-      <StepIndicator current={step} total={STEPS.length} />
+      <StepIndicator current={step} steps={STEPS} />
 
       {error && <div style={{ background: '#fce8e8', border: '1px solid #e00', padding: '10px 14px', borderRadius: 6, marginBottom: 16, fontSize: 13, color: '#a00' }}>{error}</div>}
 
       {/* STEP 0 — Pick file */}
       {step === 0 && (
         <div className="step-card">
-          <h2>Seleziona la foto</h2>
+          <h2>1. Seleziona la foto</h2>
           <div className="field">
             <label>Foto (JPEG, PNG, WEBP – max 50 MB)</label>
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} />
@@ -257,7 +257,7 @@ export default function UploadPage() {
       {/* STEP 1 — Position */}
       {step === 1 && (
         <div className="step-card">
-          <h2>Posizione della foto</h2>
+          <h2>2. Posizione della foto</h2>
           {exifGps ? (
             <p style={{ marginBottom: 12, fontSize: 13 }}>
               <span className="tag success">Posizione da GPS EXIF</span> — puoi spostarla trascinando il marker.
@@ -352,7 +352,7 @@ export default function UploadPage() {
       {/* STEP 2 — Title & AI */}
       {step === 2 && (
         <div className="step-card">
-          <h2>Titolo e descrizione</h2>
+          <h2>3. Titolo e descrizione</h2>
 
           {/* Photo preview + metadata summary */}
           <div style={{ display: 'flex', gap: 14, marginBottom: 18, alignItems: 'flex-start' }}>
@@ -396,7 +396,7 @@ export default function UploadPage() {
       {/* STEP 3 — Consent */}
       {step === 3 && (
         <div className="step-card">
-          <h2>Consenso</h2>
+          <h2>4. Consenso</h2>
           {consent ? (
             <ConsentText markdown={consent.markdown} />
           ) : (
@@ -418,7 +418,7 @@ export default function UploadPage() {
       {/* STEP 4 — Confirm */}
       {step === 4 && (
         <div className="step-card">
-          <h2>Riepilogo e conferma</h2>
+          <h2>5. Riepilogo e conferma</h2>
           {previewUrl && <img className="preview-img" src={previewUrl} alt="Anteprima" style={{ maxHeight: 200, marginBottom: 16 }} />}
           <PhotoMeta
             titolo={titolo}
@@ -445,11 +445,16 @@ export default function UploadPage() {
   );
 }
 
-function StepIndicator({ current, total }) {
+function StepIndicator({ current, steps }) {
   return (
     <div className="step-indicator">
-      {Array.from({ length: total }).map((_, i) => (
-        <div key={i} className={`step-indicator__dot ${i < current ? 'done' : i === current ? 'active' : ''}`} />
+      {steps.map((_, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && <div className={`step-indicator__line ${i <= current ? 'done' : ''}`} />}
+          <div className={`step-indicator__dot ${i < current ? 'done' : i === current ? 'active' : ''}`}>
+            {i + 1}
+          </div>
+        </React.Fragment>
       ))}
     </div>
   );
