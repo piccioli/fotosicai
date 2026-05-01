@@ -249,7 +249,7 @@ export default function UploadPage() {
               maxLength={120}
             />
             <div className="hint" style={{ color: '#888' }}>
-              Riceverai un link per confermare e pubblicare la foto. Una volta verificata, l'email è ricordata per 30 giorni.
+              Riceverai un link per confermare la tua email. Dopo la conferma, la foto verrà sottoposta a validazione da parte di un amministratore prima di essere pubblicata.
             </div>
           </div>
           <div className="checkbox-row" style={{ marginBottom: 4 }}>

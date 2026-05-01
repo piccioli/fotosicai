@@ -173,7 +173,10 @@ router.post('/:id/finalize', async (req, res, next) => {
     if (trusted) {
       db.prepare(
         `UPDATE images SET
-          status = 'published', verified_at = ?,
+          status = 'published',
+          verified_at = ?,
+          validated_at = NULL,
+          validated_by = NULL,
           titolo = ?, caption = ?,
           autore_nome = ?,
           lat = ?, lng = ?,

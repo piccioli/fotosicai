@@ -333,6 +333,8 @@ button { cursor: pointer; }
 .admin-btn--primary:hover:not(:disabled) { background: #2a3a52; border-color: #2a3a52; }
 .admin-btn--danger { background: none; border-color: #e53935; color: #e53935; }
 .admin-btn--danger:hover:not(:disabled) { background: #fdecea; }
+.admin-btn--success { background: none; border-color: #2e7d32; color: #2e7d32; }
+.admin-btn--success:hover:not(:disabled) { background: #e6f4ea; }
 .admin-btn--sm { padding: 4px 10px; font-size: 12px; }
 
 /* Fields */

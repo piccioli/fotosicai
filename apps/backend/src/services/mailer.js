@@ -35,10 +35,12 @@ async function sendVerificationEmail({ to, photoId, token, titolo }) {
 
 hai caricato la foto "${titolo}" su FotoSICAI.
 
-Per pubblicarla e renderla visibile sulla mappa, clicca il link di conferma:
+Per confermare la tua email, clicca il link qui sotto:
 ${verifyUrl}
 
 Il link è valido per ${process.env.EMAIL_VERIFICATION_TTL_HOURS || 24} ore.
+
+Dopo la conferma, la foto verrà sottoposta a validazione da parte di un amministratore prima di essere pubblicata sulla mappa.
 
 Una volta verificata, la tua email sarà ricordata per ${process.env.EMAIL_VERIFICATION_TRUST_DAYS || 30} giorni: nelle prossime foto che caricherai non dovrai ripetere questo passaggio.
 
@@ -46,10 +48,10 @@ Una volta verificata, la tua email sarà ricordata per ${process.env.EMAIL_VERIF
 
   const html = `<p>Ciao,</p>
 <p>hai caricato la foto <strong>"${titolo}"</strong> su FotoSICAI.</p>
-<p>Per pubblicarla e renderla visibile sulla mappa, clicca il pulsante qui sotto:</p>
+<p>Per confermare la tua email, clicca il pulsante qui sotto:</p>
 <p style="margin:24px 0">
   <a href="${verifyUrl}" style="background:#2e7d32;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold">
-    Conferma e pubblica la foto
+    Conferma la tua email
   </a>
 </p>
 <p style="font-size:13px;color:#666">
@@ -58,6 +60,7 @@ Una volta verificata, la tua email sarà ricordata per ${process.env.EMAIL_VERIF
 </p>
 <p style="font-size:13px;color:#666">
   Il link è valido per ${process.env.EMAIL_VERIFICATION_TTL_HOURS || 24} ore.<br>
+  Dopo la conferma, la foto verrà sottoposta a validazione da parte di un amministratore prima di essere pubblicata sulla mappa.<br>
   Una volta verificata, la tua email sarà ricordata per ${process.env.EMAIL_VERIFICATION_TRUST_DAYS || 30} giorni:
   nelle prossime foto che caricherai non dovrai ripetere questo passaggio.
 </p>

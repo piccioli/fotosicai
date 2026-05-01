@@ -82,4 +82,10 @@ export const adminApi = {
 
   deleteImage: (id) =>
     adminRequest(`/images/${id}`, { method: 'DELETE' }),
+
+  validateImage: (id) =>
+    adminRequest(`/images/${id}/validate`, { method: 'POST' }),
+
+  invalidateImage: (id) =>
+    adminRequest(`/images/${id}/invalidate`, { method: 'POST' }),
 };

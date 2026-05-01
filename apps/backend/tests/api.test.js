@@ -494,14 +494,25 @@ describe('Upload — flusso completo', () => {
     expect(verify.headers.location).toContain(`photo=${id}`);
     expect(verify.headers.location).toContain('verified=1');
 
-    // Foto ora visibile
-    const list = await request(app).get('/api/images');
-    expect(list.body.some((i) => i.id === id)).toBe(true);
-
-    // Token consumato
-    const rowAfter = db.prepare('SELECT verification_token, status FROM images WHERE id = ?').get(id);
+    // Token consumato, status=published ma ancora non validata dall'admin
+    const rowAfter = db.prepare('SELECT verification_token, status, validated_at FROM images WHERE id = ?').get(id);
     expect(rowAfter.status).toBe('published');
     expect(rowAfter.verification_token).toBeNull();
+    expect(rowAfter.validated_at).toBeNull();
+
+    // Foto NON ancora visibile pubblicamente (manca validazione admin)
+    const listBefore = await request(app).get('/api/images');
+    expect(listBefore.body.some((i) => i.id === id)).toBe(false);
+
+    // Admin valida → foto visibile
+    const val = await request(app)
+      .post(`/api/admin/images/${id}/validate`)
+      .set('Authorization', 'Bearer test-admin-token');
+    expect(val.status).toBe(200);
+    expect(val.body.validated).toBe(true);
+
+    const listAfter = await request(app).get('/api/images');
+    expect(listAfter.body.some((i) => i.id === id)).toBe(true);
   });
 
   test('Token già usato → 404', async () => {
@@ -561,9 +572,16 @@ describe('Upload — flusso completo', () => {
     // Nessuna email inviata
     expect(sendVerificationEmail).not.toHaveBeenCalled();
 
-    // Foto subito visibile
-    const list = await request(app).get('/api/images');
-    expect(list.body.some((i) => i.id === id)).toBe(true);
+    // Foto NON ancora visibile — trust window salta la verifica email ma non la validazione admin
+    const listBefore = await request(app).get('/api/images');
+    expect(listBefore.body.some((i) => i.id === id)).toBe(false);
+
+    // Admin valida → ora visibile
+    await request(app)
+      .post(`/api/admin/images/${id}/validate`)
+      .set('Authorization', 'Bearer test-admin-token');
+    const listAfter = await request(app).get('/api/images');
+    expect(listAfter.body.some((i) => i.id === id)).toBe(true);
   });
 
   test('Flusso end-to-end: upload → AI → verify → list → search → delete', async () => {
@@ -608,6 +626,12 @@ describe('Upload — flusso completo', () => {
     const { verification_token: token } = db.prepare('SELECT verification_token FROM images WHERE id = ?').get(id);
     const verify = await request(app).get(`/api/verify/${token}`);
     expect(verify.status).toBe(302);
+
+    // 5b. Validazione admin (gate indipendente dalla verifica email)
+    const val = await request(app)
+      .post(`/api/admin/images/${id}/validate`)
+      .set('Authorization', 'Bearer test-admin-token');
+    expect(val.status).toBe(200);
 
     // 6. Immagine nella lista
     const list = await request(app).get('/api/images');
@@ -721,7 +745,8 @@ describe('Admin — nuovi endpoint', () => {
     expect(res.status).toBe(200);
     expect(typeof res.body.total_uploaded).toBe('number');
     expect(typeof res.body.total_published).toBe('number');
-    expect(typeof res.body.total_pending).toBe('number');
+    expect(typeof res.body.total_pending_email).toBe('number');
+    expect(typeof res.body.total_pending_validation).toBe('number');
     expect(Array.isArray(res.body.by_stage)).toBe(true);
     expect(Array.isArray(res.body.by_region)).toBe(true);
   });
@@ -750,5 +775,115 @@ describe('Admin — nuovi endpoint', () => {
       .set('Authorization', 'Bearer test-admin-token');
     expect(res.status).toBe(200);
     res.body.items.forEach((img) => expect(img.status).toBe('published'));
+  });
+
+  test('GET /api/admin/images → include validated_at e validated_by', async () => {
+    const res = await request(app)
+      .get('/api/admin/images')
+      .set('Authorization', 'Bearer test-admin-token');
+    expect(res.status).toBe(200);
+    res.body.items.forEach((img) => {
+      expect('validated_at' in img).toBe(true);
+      expect('validated_by' in img).toBe(true);
+    });
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// Admin — validate / invalidate
+// ══════════════════════════════════════════════════════════════════════════
+
+describe('Admin — validate/invalidate', () => {
+  const FIXTURE_PATH = resolveFixture('foto-test', 'foto-con-gps', 'foto-senza-gps');
+  function skipIfNoFixture() {
+    if (!FIXTURE_PATH) { console.warn('[skip] nessuna fixture'); return true; }
+    return false;
+  }
+
+  test('POST /api/admin/images/:id/validate senza token → 401', async () => {
+    const res = await request(app).post('/api/admin/images/qualsiasi-id/validate');
+    expect(res.status).toBe(401);
+  });
+
+  test('POST /api/admin/images/inesistente/validate → 404', async () => {
+    const res = await request(app)
+      .post('/api/admin/images/non-esiste/validate')
+      .set('Authorization', 'Bearer test-admin-token');
+    expect(res.status).toBe(404);
+  });
+
+  test('Validate su foto in pending_verification → 409', async () => {
+    if (skipIfNoFixture()) return;
+    const upload = await request(app)
+      .post('/api/upload')
+      .attach('file', FIXTURE_PATH)
+      .field('autore_nome', 'Test')
+      .field('email', 'test@ex.it')
+      .field('lat', '43.7')
+      .field('lng', '11.2');
+    const id = upload.body.id;
+    await request(app).post(`/api/upload/${id}/finalize`)
+      .send({ titolo: 'T', autore_nome: 'Test', lat: 43.7, lng: 11.2, consenso_version: '2026-04-30', consenso_accepted: true });
+
+    const res = await request(app)
+      .post(`/api/admin/images/${id}/validate`)
+      .set('Authorization', 'Bearer test-admin-token');
+    expect(res.status).toBe(409);
+  });
+
+  test('Validate + invalidate → visibilità pubblica corrispondente', async () => {
+    if (skipIfNoFixture()) return;
+
+    // Upload + finalize + verify token (→ status=published, validated_at=null)
+    const upload = await request(app)
+      .post('/api/upload')
+      .attach('file', FIXTURE_PATH)
+      .field('autore_nome', 'Validator Test')
+      .field('email', 'valtest@ex.it')
+      .field('lat', '43.7')
+      .field('lng', '11.2');
+    const id = upload.body.id;
+
+    await request(app).post(`/api/upload/${id}/finalize`)
+      .send({ titolo: 'Val test', autore_nome: 'Validator Test', lat: 43.7, lng: 11.2, consenso_version: '2026-04-30', consenso_accepted: true });
+
+    const db = getDb();
+    const { verification_token: tok } = db.prepare('SELECT verification_token FROM images WHERE id = ?').get(id);
+    await request(app).get(`/api/verify/${tok}`);
+
+    // Non visibile senza validazione
+    const pub1 = await request(app).get('/api/images');
+    expect(pub1.body.some((i) => i.id === id)).toBe(false);
+
+    // Validate
+    const valRes = await request(app)
+      .post(`/api/admin/images/${id}/validate`)
+      .set('Authorization', 'Bearer test-admin-token');
+    expect(valRes.status).toBe(200);
+    expect(valRes.body.validated).toBe(true);
+
+    // Ora visibile
+    const pub2 = await request(app).get('/api/images');
+    expect(pub2.body.some((i) => i.id === id)).toBe(true);
+    const detail = await request(app).get(`/api/images/${id}`);
+    expect(detail.status).toBe(200);
+
+    // Validate idempotente
+    const valRes2 = await request(app)
+      .post(`/api/admin/images/${id}/validate`)
+      .set('Authorization', 'Bearer test-admin-token');
+    expect(valRes2.status).toBe(200);
+
+    // Invalidate
+    const invRes = await request(app)
+      .post(`/api/admin/images/${id}/invalidate`)
+      .set('Authorization', 'Bearer test-admin-token');
+    expect(invRes.status).toBe(200);
+    expect(invRes.body.validated).toBe(false);
+
+    // Non più visibile
+    const pub3 = await request(app).get('/api/images');
+    expect(pub3.body.some((i) => i.id === id)).toBe(false);
+    expect((await request(app).get(`/api/images/${id}`)).status).toBe(404);
   });
 });

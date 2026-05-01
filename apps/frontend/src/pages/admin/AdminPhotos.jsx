@@ -2,8 +2,8 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { adminApi } from '../../lib/api.js';
 
 const STATUS_LABELS = {
-  published: 'Pubblicata',
-  pending_verification: 'In attesa',
+  published: 'Email verificata',
+  pending_verification: 'In attesa email',
   draft: 'Bozza',
 };
 
@@ -18,7 +18,7 @@ export default function AdminPhotos() {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [error, setError] = useState('');
-  const [deleting, setDeleting] = useState(null);
+  const [acting, setActing] = useState(null); // id of row being acted on
   const debounceRef = useRef(null);
 
   const load = useCallback((s, query, p) => {
@@ -42,17 +42,32 @@ export default function AdminPhotos() {
     setPage(1);
   }
 
+  async function handleValidate(id) {
+    setActing(id);
+    try {
+      await adminApi.validateImage(id);
+      load(status, q, page);
+    } catch (e) { alert(`Errore: ${e.message}`); }
+    finally { setActing(null); }
+  }
+
+  async function handleInvalidate(id) {
+    setActing(id);
+    try {
+      await adminApi.invalidateImage(id);
+      load(status, q, page);
+    } catch (e) { alert(`Errore: ${e.message}`); }
+    finally { setActing(null); }
+  }
+
   async function handleDelete(id, title) {
     if (!window.confirm(`Eliminare la foto "${title || id}"? Questa azione è irreversibile.`)) return;
-    setDeleting(id);
+    setActing(id);
     try {
       await adminApi.deleteImage(id);
       load(status, q, page);
-    } catch (e) {
-      alert(`Errore: ${e.message}`);
-    } finally {
-      setDeleting(null);
-    }
+    } catch (e) { alert(`Errore: ${e.message}`); }
+    finally { setActing(null); }
   }
 
   const totalPages = data ? Math.ceil(data.total / data.page_size) : 1;
@@ -64,8 +79,9 @@ export default function AdminPhotos() {
       <div className="admin-filters">
         <select value={status} onChange={handleStatusChange} className="admin-select">
           <option value="all">Tutti gli stati</option>
-          <option value="published">Pubblicate</option>
-          <option value="pending_verification">In attesa di verifica</option>
+          <option value="pending_validation">In attesa di validazione</option>
+          <option value="published">Email verificata</option>
+          <option value="pending_verification">In attesa email</option>
           <option value="draft">Bozza</option>
         </select>
         <input
@@ -95,7 +111,8 @@ export default function AdminPhotos() {
                       <th>Email</th>
                       <th>Tappa</th>
                       <th>Regione</th>
-                      <th>Stato</th>
+                      <th>Stato email</th>
+                      <th>Validata</th>
                       <th>Data</th>
                       <th></th>
                     </tr>
@@ -109,7 +126,7 @@ export default function AdminPhotos() {
                             : <div className="admin-thumb admin-thumb--empty" />}
                         </td>
                         <td>
-                          {img.status === 'published'
+                          {img.status === 'published' && img.validated_at
                             ? <a href={`/foto/${img.id}`} target="_blank" rel="noopener noreferrer">{img.titolo || '—'}</a>
                             : (img.titolo || '—')}
                         </td>
@@ -122,15 +139,40 @@ export default function AdminPhotos() {
                             {STATUS_LABELS[img.status] || img.status}
                           </span>
                         </td>
+                        <td style={{ textAlign: 'center' }}>
+                          {img.validated_at
+                            ? <span className="admin-badge admin-badge--ok" title={`Validata da ${img.validated_by} il ${fmt(img.validated_at)}`}>Sì</span>
+                            : <span className="admin-badge admin-badge--neutral">No</span>}
+                        </td>
                         <td style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{fmt(img.created_at)}</td>
                         <td>
-                          <button
-                            className="admin-btn admin-btn--danger admin-btn--sm"
-                            onClick={() => handleDelete(img.id, img.titolo)}
-                            disabled={deleting === img.id}
-                          >
-                            {deleting === img.id ? '…' : 'Elimina'}
-                          </button>
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap' }}>
+                            {img.status === 'published' && !img.validated_at && (
+                              <button
+                                className="admin-btn admin-btn--success admin-btn--sm"
+                                onClick={() => handleValidate(img.id)}
+                                disabled={acting === img.id}
+                              >
+                                {acting === img.id ? '…' : 'Valida'}
+                              </button>
+                            )}
+                            {img.validated_at && (
+                              <button
+                                className="admin-btn admin-btn--sm"
+                                onClick={() => handleInvalidate(img.id)}
+                                disabled={acting === img.id}
+                              >
+                                {acting === img.id ? '…' : 'Revoca'}
+                              </button>
+                            )}
+                            <button
+                              className="admin-btn admin-btn--danger admin-btn--sm"
+                              onClick={() => handleDelete(img.id, img.titolo)}
+                              disabled={acting === img.id}
+                            >
+                              {acting === img.id ? '…' : 'Elimina'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -11,6 +11,8 @@ function withUrls(img) {
   };
 }
 
+const PUBLIC_WHERE = "status='published' AND validated_at IS NOT NULL";
+
 // GET /api/images?bbox=W,S,E,N&limit=200
 router.get('/', (req, res) => {
   const db = getDb();
@@ -24,7 +26,7 @@ router.get('/', (req, res) => {
     const [W, S, E, N] = parts;
     const rows = db.prepare(
       `SELECT id, lat, lng, thumbnail_path, medium_path, file_path, titolo, stage_ref, data_scatto
-       FROM images WHERE status='published' AND lat BETWEEN ? AND ? AND lng BETWEEN ? AND ?
+       FROM images WHERE ${PUBLIC_WHERE} AND lat BETWEEN ? AND ? AND lng BETWEEN ? AND ?
        LIMIT ?`
     ).all(S, N, W, E, limit);
     return res.json(rows.map(withUrls));
@@ -33,7 +35,7 @@ router.get('/', (req, res) => {
   // Without bbox: return latest N
   const rows = db.prepare(
     `SELECT id, lat, lng, thumbnail_path, medium_path, file_path, titolo, stage_ref, data_scatto
-     FROM images WHERE status='published' ORDER BY created_at DESC LIMIT ?`
+     FROM images WHERE ${PUBLIC_WHERE} ORDER BY created_at DESC LIMIT ?`
   ).all(limit);
   res.json(rows.map(withUrls));
 });
@@ -41,7 +43,7 @@ router.get('/', (req, res) => {
 // GET /api/images/:id
 router.get('/:id', (req, res) => {
   const db = getDb();
-  const img = db.prepare('SELECT * FROM images WHERE id = ? AND status = ?').get(req.params.id, 'published');
+  const img = db.prepare(`SELECT * FROM images WHERE id = ? AND ${PUBLIC_WHERE}`).get(req.params.id);
   if (!img) return res.status(404).json({ error: 'Immagine non trovata' });
   res.json(withUrls(img));
 });

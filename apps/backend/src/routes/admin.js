@@ -52,18 +52,19 @@ router.get('/stats', requireAdmin, (req, res) => {
   const db = getDb();
 
   const total_uploaded = db.prepare('SELECT COUNT(*) AS n FROM images').get().n;
-  const total_published = db.prepare("SELECT COUNT(*) AS n FROM images WHERE status='published'").get().n;
-  const total_pending = db.prepare("SELECT COUNT(*) AS n FROM images WHERE status='pending_verification'").get().n;
+  const total_pending_email = db.prepare("SELECT COUNT(*) AS n FROM images WHERE status='pending_verification'").get().n;
+  const total_pending_validation = db.prepare("SELECT COUNT(*) AS n FROM images WHERE status='published' AND validated_at IS NULL").get().n;
+  const total_published = db.prepare("SELECT COUNT(*) AS n FROM images WHERE status='published' AND validated_at IS NOT NULL").get().n;
 
   const by_stage = db
-    .prepare("SELECT stage_ref, COUNT(*) AS count FROM images WHERE status='published' AND stage_ref IS NOT NULL GROUP BY stage_ref ORDER BY stage_ref")
+    .prepare("SELECT stage_ref, COUNT(*) AS count FROM images WHERE status='published' AND validated_at IS NOT NULL AND stage_ref IS NOT NULL GROUP BY stage_ref ORDER BY stage_ref")
     .all();
 
   const by_region = db
-    .prepare("SELECT regione, COUNT(*) AS count FROM images WHERE status='published' AND regione IS NOT NULL GROUP BY regione ORDER BY count DESC")
+    .prepare("SELECT regione, COUNT(*) AS count FROM images WHERE status='published' AND validated_at IS NOT NULL AND regione IS NOT NULL GROUP BY regione ORDER BY count DESC")
     .all();
 
-  res.json({ total_uploaded, total_published, total_pending, by_stage, by_region });
+  res.json({ total_uploaded, total_pending_email, total_pending_validation, total_published, by_stage, by_region });
 });
 
 // GET /api/admin/users
@@ -96,7 +97,9 @@ router.get('/images', requireAdmin, (req, res) => {
   const conditions = [];
   const params = [];
 
-  if (status && status !== 'all') {
+  if (status === 'pending_validation') {
+    conditions.push("status = 'published' AND validated_at IS NULL");
+  } else if (status && status !== 'all') {
     conditions.push('status = ?');
     params.push(status);
   }
@@ -112,7 +115,8 @@ router.get('/images', requireAdmin, (req, res) => {
   const total = db.prepare(`SELECT COUNT(*) AS n FROM images ${where}`).get(...params).n;
   const rows = db.prepare(`
     SELECT id, status, thumbnail_path, titolo, autore_nome, email,
-           stage_ref, regione, created_at, stage_distance_m
+           stage_ref, regione, created_at, stage_distance_m,
+           validated_at, validated_by
     FROM images ${where}
     ORDER BY created_at DESC
     LIMIT ? OFFSET ?
@@ -124,6 +128,32 @@ router.get('/images', requireAdmin, (req, res) => {
   }));
 
   res.json({ items, total, page, page_size: PAGE_SIZE });
+});
+
+// POST /api/admin/images/:id/validate
+router.post('/images/:id/validate', requireAdmin, (req, res) => {
+  const db = getDb();
+  const img = db.prepare('SELECT id, status, validated_at FROM images WHERE id = ?').get(req.params.id);
+  if (!img) return res.status(404).json({ error: 'Immagine non trovata' });
+  if (img.status !== 'published') {
+    return res.status(409).json({ error: 'Solo foto con email verificata possono essere validate' });
+  }
+  if (img.validated_at) return res.json({ validated: true, validated_at: img.validated_at }); // idempotent
+
+  const now = new Date().toISOString();
+  const by = req.adminUser || 'admin';
+  db.prepare('UPDATE images SET validated_at = ?, validated_by = ? WHERE id = ?').run(now, by, img.id);
+  res.json({ validated: true, validated_at: now, validated_by: by });
+});
+
+// POST /api/admin/images/:id/invalidate
+router.post('/images/:id/invalidate', requireAdmin, (req, res) => {
+  const db = getDb();
+  const img = db.prepare('SELECT id FROM images WHERE id = ?').get(req.params.id);
+  if (!img) return res.status(404).json({ error: 'Immagine non trovata' });
+
+  db.prepare('UPDATE images SET validated_at = NULL, validated_by = NULL WHERE id = ?').run(img.id);
+  res.json({ validated: false });
 });
 
 // DELETE /api/admin/images/:id

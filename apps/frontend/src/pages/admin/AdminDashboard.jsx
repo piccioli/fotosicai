@@ -49,8 +49,9 @@ export default function AdminDashboard() {
 
       <div className="admin-kpi-row">
         <KpiCard label="Foto caricate" value={stats.total_uploaded} />
+        <KpiCard label="In attesa email" value={stats.total_pending_email} accent="#1565c0" />
+        <KpiCard label="In attesa validazione" value={stats.total_pending_validation} accent="#e65100" />
         <KpiCard label="Pubblicate" value={stats.total_published} accent="#2e7d32" />
-        <KpiCard label="In attesa verifica" value={stats.total_pending} accent="#e65100" />
       </div>
 
       <div className="admin-charts-row">

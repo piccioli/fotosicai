@@ -16,11 +16,15 @@ export default function VerifyPendingPage() {
           Abbiamo inviato un'email a <strong>{email}</strong>.
         </p>
         <p style={{ fontSize: 14, color: '#555', marginBottom: 8 }}>
-          Clicca il link nell'email per pubblicare la foto e renderla visibile sulla mappa.
+          Clicca il link nell'email per confermare il tuo indirizzo.
+        </p>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>
+          Dopo la conferma, la foto verrà inviata in coda di validazione e sarà pubblicata
+          sulla mappa non appena approvata da un amministratore.
         </p>
         <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>
-          La verifica vale 30 giorni: nelle prossime foto che caricherai dalla stessa email
-          non dovrai ripetere questo passaggio e la foto verrà pubblicata immediatamente.
+          La verifica email vale 30 giorni: nelle prossime foto che caricherai dalla stessa email
+          non dovrai ripetere questo passaggio.
         </p>
         <p style={{ fontSize: 13, color: '#aaa', marginBottom: 24 }}>
           Non hai ricevuto l'email? Controlla la cartella spam o attendi qualche minuto.
