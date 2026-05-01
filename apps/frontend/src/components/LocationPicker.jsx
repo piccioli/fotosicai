@@ -20,6 +20,17 @@ export default function LocationPicker({ initialPosition, onChange }) {
 
     L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 18 }).addTo(map);
 
+    // SICAI trail overlay
+    fetch('/DATA/data.geojson')
+      .then((r) => r.json())
+      .then((geojson) => {
+        L.geoJSON(geojson, {
+          style: { color: '#cc0000', weight: 3, opacity: 0.8 },
+          interactive: false,
+        }).addTo(map);
+      })
+      .catch(() => {});
+
     const icon = L.icon({
       iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
       iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
