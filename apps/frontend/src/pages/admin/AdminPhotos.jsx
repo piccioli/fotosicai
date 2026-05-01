@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { adminApi } from '../../lib/api.js';
 
 const STATUS_LABELS = {
@@ -13,60 +13,71 @@ function fmt(iso) {
 }
 
 export default function AdminPhotos() {
-  const [data, setData] = useState(null);
-  const [status, setStatus] = useState('all');
-  const [q, setQ] = useState('');
-  const [page, setPage] = useState(1);
-  const [error, setError] = useState('');
-  const [acting, setActing] = useState(null); // id of row being acted on
-  const debounceRef = useRef(null);
+  const [data, setData]         = useState(null);
+  const [facets, setFacets]     = useState({ stage_refs: [], regioni: [] });
+  const [status, setStatus]     = useState('all');
+  const [validated, setVal]     = useState('all');
+  const [q, setQ]               = useState('');
+  const [email, setEmail]       = useState('');
+  const [stageRef, setStageRef] = useState('all');
+  const [regione, setRegione]   = useState('all');
+  const [page, setPage]         = useState(1);
+  const [error, setError]       = useState('');
+  const [acting, setActing]     = useState(null);
+  const debQ    = useRef(null);
+  const debMail = useRef(null);
 
-  const load = useCallback((s, query, p) => {
-    setError('');
-    adminApi.images({ status: s, q: query, page: p })
-      .then(setData)
-      .catch((e) => setError(e.message));
+  useEffect(() => {
+    adminApi.facets().then(setFacets).catch(() => {});
   }, []);
 
-  useEffect(() => { load(status, q, page); }, [status, page]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  function handleQChange(e) {
-    const val = e.target.value;
-    setQ(val);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => { setPage(1); load(status, val, 1); }, 400);
+  function load(opts) {
+    setError('');
+    adminApi.images(opts).then(setData).catch((e) => setError(e.message));
   }
 
-  function handleStatusChange(e) {
-    setStatus(e.target.value);
-    setPage(1);
+  // Reload when discrete filters change
+  useEffect(() => {
+    load({ status, validated, q, email, stage_ref: stageRef, regione, page });
+  }, [status, validated, stageRef, regione, page]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function resetPage(cb) { setPage(1); cb(); }
+
+  function handleDiscreteChange(setter, val) {
+    resetPage(() => setter(val));
+  }
+
+  function handleQChange(e) {
+    const val = e.target.value; setQ(val);
+    clearTimeout(debQ.current);
+    debQ.current = setTimeout(() => { setPage(1); load({ status, validated, q: val, email, stage_ref: stageRef, regione, page: 1 }); }, 400);
+  }
+
+  function handleEmailChange(e) {
+    const val = e.target.value; setEmail(val);
+    clearTimeout(debMail.current);
+    debMail.current = setTimeout(() => { setPage(1); load({ status, validated, q, email: val, stage_ref: stageRef, regione, page: 1 }); }, 400);
   }
 
   async function handleValidate(id) {
     setActing(id);
-    try {
-      await adminApi.validateImage(id);
-      load(status, q, page);
-    } catch (e) { alert(`Errore: ${e.message}`); }
+    try { await adminApi.validateImage(id); load({ status, validated, q, email, stage_ref: stageRef, regione, page }); }
+    catch (e) { alert(`Errore: ${e.message}`); }
     finally { setActing(null); }
   }
 
   async function handleInvalidate(id) {
     setActing(id);
-    try {
-      await adminApi.invalidateImage(id);
-      load(status, q, page);
-    } catch (e) { alert(`Errore: ${e.message}`); }
+    try { await adminApi.invalidateImage(id); load({ status, validated, q, email, stage_ref: stageRef, regione, page }); }
+    catch (e) { alert(`Errore: ${e.message}`); }
     finally { setActing(null); }
   }
 
   async function handleDelete(id, title) {
     if (!window.confirm(`Eliminare la foto "${title || id}"? Questa azione è irreversibile.`)) return;
     setActing(id);
-    try {
-      await adminApi.deleteImage(id);
-      load(status, q, page);
-    } catch (e) { alert(`Errore: ${e.message}`); }
+    try { await adminApi.deleteImage(id); load({ status, validated, q, email, stage_ref: stageRef, regione, page }); }
+    catch (e) { alert(`Errore: ${e.message}`); }
     finally { setActing(null); }
   }
 
@@ -76,21 +87,55 @@ export default function AdminPhotos() {
     <div>
       <h2 className="admin-page-title">Foto {data ? `(${data.total})` : ''}</h2>
 
-      <div className="admin-filters">
-        <select value={status} onChange={handleStatusChange} className="admin-select">
-          <option value="all">Tutti gli stati</option>
-          <option value="pending_validation">In attesa di validazione</option>
-          <option value="published">Email verificata</option>
-          <option value="pending_verification">In attesa email</option>
-          <option value="draft">Bozza</option>
-        </select>
-        <input
-          type="search"
-          placeholder="Cerca titolo, autore, email…"
-          value={q}
-          onChange={handleQChange}
-          className="admin-search"
-        />
+      <div className="admin-filters-grid">
+        {/* Row 1 – stato email + validazione */}
+        <label className="admin-filter-label">
+          <span>Stato email</span>
+          <select value={status} onChange={(e) => handleDiscreteChange(setStatus, e.target.value)} className="admin-select">
+            <option value="all">Tutti</option>
+            <option value="pending_validation">Email verif. + non validate</option>
+            <option value="published">Email verificata</option>
+            <option value="pending_verification">In attesa email</option>
+            <option value="draft">Bozza</option>
+          </select>
+        </label>
+
+        <label className="admin-filter-label">
+          <span>Validazione admin</span>
+          <select value={validated} onChange={(e) => handleDiscreteChange(setVal, e.target.value)} className="admin-select">
+            <option value="all">Tutte</option>
+            <option value="false">Non validate</option>
+            <option value="true">Validate</option>
+          </select>
+        </label>
+
+        {/* Row 2 – tappa + regione */}
+        <label className="admin-filter-label">
+          <span>Tappa</span>
+          <select value={stageRef} onChange={(e) => handleDiscreteChange(setStageRef, e.target.value)} className="admin-select">
+            <option value="all">Tutte le tappe</option>
+            {facets.stage_refs.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </label>
+
+        <label className="admin-filter-label">
+          <span>Regione</span>
+          <select value={regione} onChange={(e) => handleDiscreteChange(setRegione, e.target.value)} className="admin-select">
+            <option value="all">Tutte le regioni</option>
+            {facets.regioni.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </label>
+
+        {/* Row 3 – testo + email */}
+        <label className="admin-filter-label">
+          <span>Cerca titolo / autore</span>
+          <input type="search" placeholder="Titolo, autore…" value={q} onChange={handleQChange} className="admin-search" />
+        </label>
+
+        <label className="admin-filter-label">
+          <span>Cerca email</span>
+          <input type="search" placeholder="nome@esempio.it" value={email} onChange={handleEmailChange} className="admin-search" />
+        </label>
       </div>
 
       {error && <div className="admin-alert admin-alert--error">{error}</div>}
@@ -148,28 +193,16 @@ export default function AdminPhotos() {
                         <td>
                           <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap' }}>
                             {img.status === 'published' && !img.validated_at && (
-                              <button
-                                className="admin-btn admin-btn--success admin-btn--sm"
-                                onClick={() => handleValidate(img.id)}
-                                disabled={acting === img.id}
-                              >
+                              <button className="admin-btn admin-btn--success admin-btn--sm" onClick={() => handleValidate(img.id)} disabled={acting === img.id}>
                                 {acting === img.id ? '…' : 'Valida'}
                               </button>
                             )}
                             {img.validated_at && (
-                              <button
-                                className="admin-btn admin-btn--sm"
-                                onClick={() => handleInvalidate(img.id)}
-                                disabled={acting === img.id}
-                              >
+                              <button className="admin-btn admin-btn--sm" onClick={() => handleInvalidate(img.id)} disabled={acting === img.id}>
                                 {acting === img.id ? '…' : 'Revoca'}
                               </button>
                             )}
-                            <button
-                              className="admin-btn admin-btn--danger admin-btn--sm"
-                              onClick={() => handleDelete(img.id, img.titolo)}
-                              disabled={acting === img.id}
-                            >
+                            <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={() => handleDelete(img.id, img.titolo)} disabled={acting === img.id}>
                               {acting === img.id ? '…' : 'Elimina'}
                             </button>
                           </div>

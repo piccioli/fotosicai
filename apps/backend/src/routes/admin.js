@@ -86,13 +86,21 @@ router.get('/users', requireAdmin, (req, res) => {
   res.json(rows.map((r) => ({ ...r, verified: r.verified === 1 })));
 });
 
-// GET /api/admin/images?status=&page=&q=
+// GET /api/admin/facets — valori distinti per i filtri (tutte le foto, non solo published)
+router.get('/facets', requireAdmin, (req, res) => {
+  const db = getDb();
+  const stage_refs = db.prepare("SELECT DISTINCT stage_ref FROM images WHERE stage_ref IS NOT NULL ORDER BY stage_ref").all().map((r) => r.stage_ref);
+  const regioni = db.prepare("SELECT DISTINCT regione FROM images WHERE regione IS NOT NULL ORDER BY regione").all().map((r) => r.regione);
+  res.json({ stage_refs, regioni });
+});
+
+// GET /api/admin/images?status=&validated=&email=&q=&stage_ref=&regione=&page=
 router.get('/images', requireAdmin, (req, res) => {
   const db = getDb();
   const PAGE_SIZE = 50;
   const page = Math.max(1, Number(req.query.page) || 1);
   const offset = (page - 1) * PAGE_SIZE;
-  const { status, q } = req.query;
+  const { status, validated, q, email, stage_ref, regione } = req.query;
 
   const conditions = [];
   const params = [];
@@ -104,11 +112,22 @@ router.get('/images', requireAdmin, (req, res) => {
     params.push(status);
   }
 
+  if (validated === 'true') { conditions.push('validated_at IS NOT NULL'); }
+  else if (validated === 'false') { conditions.push('validated_at IS NULL'); }
+
+  if (email && email.trim()) {
+    conditions.push('email LIKE ?');
+    params.push(`%${email.trim()}%`);
+  }
+
   if (q && q.trim()) {
     const like = `%${q.trim()}%`;
-    conditions.push('(titolo LIKE ? OR autore_nome LIKE ? OR email LIKE ?)');
-    params.push(like, like, like);
+    conditions.push('(titolo LIKE ? OR autore_nome LIKE ?)');
+    params.push(like, like);
   }
+
+  if (stage_ref && stage_ref !== 'all') { conditions.push('stage_ref = ?'); params.push(stage_ref); }
+  if (regione && regione !== 'all') { conditions.push('regione = ?'); params.push(regione); }
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 

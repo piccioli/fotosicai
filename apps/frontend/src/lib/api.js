@@ -71,10 +71,16 @@ export const adminApi = {
 
   users: () => adminRequest('/users'),
 
-  images: ({ status, q, page } = {}) => {
+  facets: () => adminRequest('/facets'),
+
+  images: ({ status, validated, q, email, stage_ref, regione, page } = {}) => {
     const qs = new URLSearchParams();
     if (status && status !== 'all') qs.set('status', status);
+    if (validated && validated !== 'all') qs.set('validated', validated);
     if (q) qs.set('q', q);
+    if (email) qs.set('email', email);
+    if (stage_ref && stage_ref !== 'all') qs.set('stage_ref', stage_ref);
+    if (regione && regione !== 'all') qs.set('regione', regione);
     if (page && page > 1) qs.set('page', String(page));
     const suffix = qs.toString() ? `?${qs}` : '';
     return adminRequest(`/images${suffix}`);
