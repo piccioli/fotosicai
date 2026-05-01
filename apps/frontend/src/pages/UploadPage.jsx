@@ -332,13 +332,29 @@ export default function UploadPage() {
       {step === 2 && (
         <div className="step-card">
           <h2>Titolo e descrizione</h2>
-          {draft?.suggested && (
-            <div style={{ marginBottom: 14, fontSize: 13, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {draft.suggested.stage?.stage_ref && <span className="tag">Tappa: {draft.suggested.stage.stage_ref}</span>}
-              {draft.suggested.comune && <span className="tag">{draft.suggested.comune}</span>}
-              {draft.suggested.regione && <span className="tag">{draft.suggested.regione}</span>}
+
+          {/* Photo preview + metadata summary */}
+          <div style={{ display: 'flex', gap: 14, marginBottom: 18, alignItems: 'flex-start' }}>
+            <img
+              src={draft?.paths?.thumb_url || previewUrl}
+              alt="Anteprima"
+              style={{ width: 110, height: 82, objectFit: 'cover', borderRadius: 6, flexShrink: 0, border: '1px solid #eee', background: '#000' }}
+            />
+            <div style={{ fontSize: 13, lineHeight: 1.8, color: '#444' }}>
+              {autoreName && <div><strong>Autore:</strong> {autoreName}</div>}
+              {exifDatetime && (
+                <div><strong>Data:</strong> {new Date(exifDatetime).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+              )}
+              {position && <div><strong>Posizione:</strong> {position.lat.toFixed(5)}, {position.lng.toFixed(5)}</div>}
+              {(draft?.suggested?.regione || draft?.suggested?.provincia || draft?.suggested?.comune) && (
+                <div><strong>Luogo:</strong> {[draft.suggested.regione, draft.suggested.provincia, draft.suggested.comune].filter(Boolean).join(' › ')}</div>
+              )}
+              {draft?.suggested?.stage?.stage_ref && (
+                <div><strong>Tappa SICAI:</strong> {draft.suggested.stage.stage_ref}</div>
+              )}
             </div>
-          )}
+          </div>
+
           {aiLoading && <p style={{ fontSize: 13, color: '#555', marginBottom: 12 }}><span className="loading-dots">Claude sta analizzando l'immagine</span></p>}
           {aiError && <p style={{ fontSize: 13, color: '#aa6600', marginBottom: 12 }}>AI non disponibile — inserisci titolo e descrizione manualmente.</p>}
           <div className="field">
