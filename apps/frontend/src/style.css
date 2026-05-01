@@ -144,6 +144,16 @@ button { cursor: pointer; }
 .consent-text h1, .consent-text h2 { font-size: 1rem; margin: 12px 0 6px; }
 .consent-text p { margin: 6px 0; }
 .consent-text ul { padding-left: 20px; margin: 6px 0; }
+.consent-required-note {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid #ffd7d7;
+  border-radius: 6px;
+  background: #fff4f4;
+  color: #8a0000;
+  font-size: 13px;
+  font-weight: 600;
+}
 
 .checkbox-row { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; }
 .checkbox-row input[type=checkbox] { margin-top: 2px; width: 18px; height: 18px; cursor: pointer; }

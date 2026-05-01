@@ -47,10 +47,18 @@ export default function UploadPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [consent, setConsent] = useState(null); // {version, markdown}
-  const [consentAccepted, setConsentAccepted] = useState(false);
+  const [consentChecks, setConsentChecks] = useState({
+    readDocument: false,
+    acceptLicense: false,
+    rightsDeclaration: false,
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [mapFullscreen, setMapFullscreen] = useState(false);
+  const allConsentAccepted =
+    consentChecks.readDocument &&
+    consentChecks.acceptLicense &&
+    consentChecks.rightsDeclaration;
 
   // Step 0: pick file
   async function handleFileChange(e) {
@@ -137,7 +145,10 @@ export default function UploadPage() {
   }, [step]);
 
   async function handleFinalize() {
-    if (!consentAccepted) { setError('Devi accettare il consenso'); return; }
+    if (!allConsentAccepted) {
+      setError('Devi accettare tutti i consensi obbligatori');
+      return;
+    }
     if (!titolo.trim()) { setError('Il titolo è obbligatorio'); return; }
     setSubmitting(true);
     setError(null);
@@ -366,20 +377,48 @@ export default function UploadPage() {
       {step === 3 && (
         <div className="step-card">
           <h2>4. Consenso</h2>
+          <p className="consent-required-note">Tutti i consensi seguenti sono obbligatori per proseguire.</p>
           {consent ? (
             <ConsentText markdown={consent.markdown} />
           ) : (
             <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}><span className="loading-dots">Caricamento</span></p>
           )}
           <div className="checkbox-row">
-            <input type="checkbox" id="consent-check" checked={consentAccepted} onChange={(e) => setConsentAccepted(e.target.checked)} />
-            <label htmlFor="consent-check">
-              Ho letto e accetto il documento di consenso per l'utilizzo delle mie foto da parte di SICAI / Montagna Servizi.
+            <input
+              type="checkbox"
+              id="consent-read-document"
+              checked={consentChecks.readDocument}
+              onChange={(e) => setConsentChecks((prev) => ({ ...prev, readDocument: e.target.checked }))}
+            />
+            <label htmlFor="consent-read-document">
+              Dichiaro di aver letto integralmente il documento di consenso e autorizzazione.
+            </label>
+          </div>
+          <div className="checkbox-row" style={{ marginTop: 10 }}>
+            <input
+              type="checkbox"
+              id="consent-accept-license"
+              checked={consentChecks.acceptLicense}
+              onChange={(e) => setConsentChecks((prev) => ({ ...prev, acceptLicense: e.target.checked }))}
+            />
+            <label htmlFor="consent-accept-license">
+              Accetto che le fotografie siano pubblicate con licenza Creative Commons CC BY 4.0.
+            </label>
+          </div>
+          <div className="checkbox-row" style={{ marginTop: 10 }}>
+            <input
+              type="checkbox"
+              id="consent-rights-declaration"
+              checked={consentChecks.rightsDeclaration}
+              onChange={(e) => setConsentChecks((prev) => ({ ...prev, rightsDeclaration: e.target.checked }))}
+            />
+            <label htmlFor="consent-rights-declaration">
+              Dichiaro di essere titolare dei diritti sulle foto caricate e di avere eventuali liberatorie necessarie.
             </label>
           </div>
           <div className="btn-row" style={{ marginTop: 16 }}>
             <button className="btn btn-secondary" onClick={() => setStep(2)}>Indietro</button>
-            <button className="btn btn-primary" disabled={!consentAccepted} onClick={() => setStep(4)}>Avanti</button>
+            <button className="btn btn-primary" disabled={!allConsentAccepted} onClick={() => setStep(4)}>Avanti</button>
           </div>
         </div>
       )}
