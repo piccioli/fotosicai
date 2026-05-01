@@ -139,6 +139,20 @@ export default function UploadPage() {
     }
   }
 
+  function handlePositionChange(pos) {
+    setPosition(pos);
+    setExifGeoInfo(null);
+    setExifStage(undefined);
+    fetch(`/api/geocode?lat=${pos.lat}&lng=${pos.lng}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((geo) => { if (geo) setExifGeoInfo(geo); })
+      .catch(() => {});
+    fetch(`/api/stages/nearest?lat=${pos.lat}&lng=${pos.lng}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((s) => setExifStage(s))
+      .catch(() => setExifStage(null));
+  }
+
   const canProceedStep0 = !!file && autoreName.trim().length > 0;
   const canProceedStep1 = !!position;
 
@@ -213,12 +227,25 @@ export default function UploadPage() {
           )}
           <LocationPicker
             initialPosition={position || ITALY_CENTER}
-            onChange={setPosition}
+            onChange={handlePositionChange}
           />
           {position && (
-            <p style={{ fontSize: 12, color: '#555', marginTop: 6 }}>
-              Lat: {position.lat.toFixed(6)} · Lng: {position.lng.toFixed(6)}
-            </p>
+            <div style={{ marginTop: 8, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span className="tag success">{position.lat.toFixed(5)}, {position.lng.toFixed(5)}</span>
+              {exifGeoInfo && (
+                <span className="tag">
+                  {[exifGeoInfo.regione, exifGeoInfo.provincia, exifGeoInfo.comune].filter(Boolean).join(' › ')}
+                </span>
+              )}
+              {exifStage?.stage_ref && (
+                <span className="tag success">Tappa SICAI: {exifStage.stage_ref} ({Math.round(exifStage.distance_m)} m dal tracciato)</span>
+              )}
+              {exifStage !== undefined && !exifStage?.stage_ref && (
+                <span className="tag warning">
+                  Nessuna tappa SICAI nel raggio di {Math.round(Number(import.meta.env.VITE_POSITION_CIRCLE_RADIUS_M || 5000) / 1000)} km — sposta il marker nei pressi del Sentiero Italia.
+                </span>
+              )}
+            </div>
           )}
           <div className="btn-row">
             <button className="btn btn-secondary" onClick={() => setStep(0)}>Indietro</button>
