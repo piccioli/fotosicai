@@ -57,6 +57,7 @@ export default function UploadPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [mapFullscreen, setMapFullscreen] = useState(false);
+  const [published, setPublished] = useState(false);
   const allConsentAccepted =
     consentChecks.readDocument &&
     consentChecks.acceptLicense &&
@@ -167,7 +168,7 @@ export default function UploadPage() {
         ai_generated: !aiError && !!titolo,
       });
       if (result.published) {
-        navigate('/');
+        setPublished(true);
       } else {
         navigate(`/upload/pending?email=${encodeURIComponent(result.email)}&email_sent=${result.email_sent !== false}`);
       }
@@ -196,6 +197,32 @@ export default function UploadPage() {
 
   const canProceedStep0 = !!file && autoreName.trim().length > 0 && EMAIL_RE.test(email.trim());
   const canProceedStep1 = !!position && withinThreshold;
+
+  if (published) {
+    return (
+      <div className="upload-page">
+        <div className="step-card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
+          <h2 style={{ marginBottom: 12 }}>Grazie per la tua foto!</h2>
+          <p style={{ fontSize: 15, color: '#333', lineHeight: 1.6, marginBottom: 10 }}>
+            Grazie per aver contribuito all'archivio fotografico del <strong>Sentiero Italia CAI</strong>.
+          </p>
+          <p style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 24 }}>
+            La tua foto è stata ricevuta ed è ora in attesa di approvazione da parte del <strong>team SICAI</strong>.
+            Non appena approvata, sarà visibile sulla mappa e nell'archivio pubblico.
+          </p>
+          <div className="btn-row" style={{ justifyContent: 'center' }}>
+            <button className="btn btn-primary" onClick={() => { setPublished(false); setStep(0); setFile(null); setPreviewUrl(null); setDraft(null); setTitolo(''); setCaption(''); }}>
+              Carica altre foto
+            </button>
+            <button className="btn btn-secondary" onClick={() => navigate('/')}>
+              Torna alla mappa
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="upload-page">
