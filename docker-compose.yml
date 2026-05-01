@@ -29,6 +29,9 @@ services:
       args:
         VITE_STAGE_MAX_DISTANCE_M: ${VITE_STAGE_MAX_DISTANCE_M:-5000}
         VITE_SICAI_TRACK_BASE_URL: ${VITE_SICAI_TRACK_BASE_URL:-https://sentieroitalia.cai.it/track/si-}
+        VITE_TILE_URL: ${VITE_TILE_URL:-https://api.webmapp.it/tiles/{z}/{x}/{y}.png}
+        VITE_TILE_ATTRIBUTION: ${VITE_TILE_ATTRIBUTION:-&copy; CAI &copy; OpenStreetMap}
+        VITE_APP_ENV: ${VITE_APP_ENV:-production}
     restart: unless-stopped
     depends_on:
       backend:

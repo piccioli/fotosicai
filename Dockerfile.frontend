@@ -17,6 +17,15 @@ ENV VITE_STAGE_MAX_DISTANCE_M=$VITE_STAGE_MAX_DISTANCE_M
 ARG VITE_SICAI_TRACK_BASE_URL=https://sentieroitalia.cai.it/track/si-
 ENV VITE_SICAI_TRACK_BASE_URL=$VITE_SICAI_TRACK_BASE_URL
 
+ARG VITE_TILE_URL=https://api.webmapp.it/tiles/{z}/{x}/{y}.png
+ENV VITE_TILE_URL=$VITE_TILE_URL
+
+ARG VITE_TILE_ATTRIBUTION=&copy; CAI &copy; OpenStreetMap
+ENV VITE_TILE_ATTRIBUTION=$VITE_TILE_ATTRIBUTION
+
+ARG VITE_APP_ENV=production
+ENV VITE_APP_ENV=$VITE_APP_ENV
+
 RUN npm run build --workspace=apps/frontend
 
 # Production: nginx serves built assets

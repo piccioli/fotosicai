@@ -5,8 +5,8 @@ import 'leaflet.markercluster';
 import { api } from '../lib/api.js';
 
 const SICAI_TRACK_BASE = import.meta.env.VITE_SICAI_TRACK_BASE_URL || 'https://sentieroitalia.cai.it/track/si-';
-const TILE_URL = 'https://api.webmapp.it/tiles/{z}/{x}/{y}.png';
-const TILE_ATTR = '&copy; CAI &copy; OpenStreetMap';
+const TILE_URL = import.meta.env.VITE_TILE_URL || 'https://api.webmapp.it/tiles/{z}/{x}/{y}.png';
+const TILE_ATTR = import.meta.env.VITE_TILE_ATTRIBUTION || '&copy; CAI &copy; OpenStreetMap';
 const GEOJSON_URL = '/DATA/data.geojson';
 const MARKER_ZOOM = 12;
 const ITALY_CENTER = [42.5, 12.5];

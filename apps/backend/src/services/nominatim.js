@@ -1,7 +1,7 @@
 const { getDb } = require('../db/index');
 
 const USER_AGENT = process.env.NOMINATIM_USER_AGENT || 'fotosicai/1.0';
-const BASE_URL = 'https://nominatim.openstreetmap.org/reverse';
+const BASE_URL = process.env.NOMINATIM_BASE_URL || 'https://nominatim.openstreetmap.org/reverse';
 const RATE_LIMIT_MS = 1100; // Nominatim policy: max 1 req/s
 
 let lastRequestAt = 0;

@@ -74,11 +74,23 @@ function InfoPopup({ onClose }) {
           dell'affidamento di servizi per l'avvio dell'attuazione del Piano Progetto
           Sentiero Italia CAI — CIG B165634123 (2024–2026).
         </div>
-        <div style={{ fontSize: 11, color: '#aaa', borderTop: '1px solid #eee', paddingTop: 10, marginTop: 8, lineHeight: 1.5 }}>
-          Software: FotoSICAI v{__APP_VERSION__} — licenza{' '}
-          <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT</a>
-          {' — '}
-          <a href="https://github.com/piccioli/fotosicai" target="_blank" rel="noopener noreferrer">codice sorgente</a>
+        <div style={{ fontSize: 11, color: '#aaa', borderTop: '1px solid #eee', paddingTop: 10, marginTop: 8, lineHeight: 1.8 }}>
+          <div>
+            Software: FotoSICAI v{__APP_VERSION__}{' '}
+            <span style={{
+              display: 'inline-block', padding: '1px 6px', borderRadius: 3, fontSize: 10, fontWeight: 700,
+              background: import.meta.env.VITE_APP_ENV === 'production' ? '#2e7d32' : '#e65100',
+              color: '#fff', verticalAlign: 'middle', marginLeft: 2,
+            }}>
+              {import.meta.env.VITE_APP_ENV === 'production' ? 'PROD' : 'DEV'}
+            </span>
+          </div>
+          <div>
+            Licenza{' '}
+            <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT</a>
+            {' — '}
+            <a href="https://github.com/piccioli/fotosicai" target="_blank" rel="noopener noreferrer">codice sorgente</a>
+          </div>
         </div>
       </div>
     </div>

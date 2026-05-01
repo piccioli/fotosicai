@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 
-const TILE_URL = 'https://api.webmapp.it/tiles/{z}/{x}/{y}.png';
-const TILE_ATTR = '&copy; CAI &copy; OpenStreetMap';
+const TILE_URL = import.meta.env.VITE_TILE_URL || 'https://api.webmapp.it/tiles/{z}/{x}/{y}.png';
+const TILE_ATTR = import.meta.env.VITE_TILE_ATTRIBUTION || '&copy; CAI &copy; OpenStreetMap';
 
 // Raggio del cerchio di riferimento (in metri), allineato al massimo dalla tappa — VITE_STAGE_MAX_DISTANCE_M nel .env
 const POSITION_CIRCLE_RADIUS_M = Number(import.meta.env.VITE_STAGE_MAX_DISTANCE_M) || 5000;
