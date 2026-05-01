@@ -172,7 +172,7 @@ export default function UploadPage() {
                 <span className="tag" style={{ color: '#888' }}>Ricerca tappa SICAI…</span>
               )}
               {exifStage !== undefined && exifStage?.stage_ref && (
-                <span className="tag success">Tappa SICAI: {exifStage.stage_ref} ({(exifStage.distance_m / 1000).toFixed(1)} km dal tracciato)</span>
+                <span className="tag success">Tappa SICAI: {exifStage.stage_ref} ({Math.round(exifStage.distance_m)} m dal tracciato)</span>
               )}
               {exifStage !== undefined && !exifStage?.stage_ref && (
                 <span className="tag warning">
