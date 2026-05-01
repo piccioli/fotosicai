@@ -5,6 +5,24 @@ import { api } from '../lib/api.js';
 import LocationPicker from '../components/LocationPicker.jsx';
 import ConsentText from '../components/ConsentText.jsx';
 
+function IconExpand() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+      <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+    </svg>
+  );
+}
+
+function IconCompress() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+      <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+    </svg>
+  );
+}
+
 const STEPS = ['File', 'Posizione', 'Titolo & AI', 'Consenso', 'Conferma'];
 const ITALY_CENTER = { lat: 42.5, lng: 12.5 };
 
@@ -30,6 +48,7 @@ export default function UploadPage() {
   const [consentAccepted, setConsentAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [mapFullscreen, setMapFullscreen] = useState(false);
 
   // Step 0: pick file
   async function handleFileChange(e) {
@@ -227,35 +246,85 @@ export default function UploadPage() {
               <span className="tag warning">Nessun GPS nella foto</span> — clicca sulla mappa o trascina il marker per indicare dove è stata scattata.
             </p>
           )}
-          <LocationPicker
-            initialPosition={position || ITALY_CENTER}
-            onChange={handlePositionChange}
-            withinThreshold={withinThreshold}
-          />
-          {position && (
-            <div style={{ marginTop: 8, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span className="tag success">{position.lat.toFixed(5)}, {position.lng.toFixed(5)}</span>
-              {exifGeoInfo && (
-                <span className="tag">
-                  {[exifGeoInfo.regione, exifGeoInfo.provincia, exifGeoInfo.comune].filter(Boolean).join(' › ')}
-                </span>
-              )}
-              {exifStage?.stage_ref && (
-                <span className="tag success">Tappa SICAI: {exifStage.stage_ref} ({Math.round(exifStage.distance_m)} m dal tracciato)</span>
-              )}
-              {exifStage !== undefined && !exifStage?.stage_ref && (
-                <span className="tag warning">
-                  Nessuna tappa SICAI nel raggio di {Math.round(Number(import.meta.env.VITE_STAGE_MAX_DISTANCE_M || 5000) / 1000)} km — sposta il marker nei pressi del Sentiero Italia.
-                </span>
-              )}
-            </div>
-          )}
-          <div className="btn-row">
-            <button className="btn btn-secondary" onClick={() => setStep(0)}>Indietro</button>
-            <button className="btn btn-primary" disabled={!canProceedStep1 || submitting} onClick={handleUploadDraft}>
-              {submitting ? <span className="loading-dots">Caricamento</span> : 'Carica e continua'}
+
+          {/* Map wrapper — diventa fullscreen overlay */}
+          <div className={mapFullscreen ? 'map-outer map-outer--fullscreen' : 'map-outer'}>
+            <LocationPicker
+              initialPosition={position || ITALY_CENTER}
+              onChange={handlePositionChange}
+              withinThreshold={withinThreshold}
+              fullscreen={mapFullscreen}
+            />
+
+            {/* Toggle fullscreen button */}
+            <button
+              className="map-fullscreen-toggle"
+              title={mapFullscreen ? 'Vista normale' : 'Schermo intero'}
+              onClick={() => setMapFullscreen((v) => !v)}
+            >
+              {mapFullscreen ? <IconCompress /> : <IconExpand />}
             </button>
+
+            {/* In fullscreen: pannello fisso in basso con info + bottoni */}
+            {mapFullscreen && (
+              <div className="map-fullscreen-panel">
+                <div className="map-fullscreen-info">
+                  {position && (
+                    <div style={{ fontSize: 13, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      <span className="tag success">{position.lat.toFixed(5)}, {position.lng.toFixed(5)}</span>
+                      {exifGeoInfo && (
+                        <span className="tag">
+                          {[exifGeoInfo.regione, exifGeoInfo.provincia, exifGeoInfo.comune].filter(Boolean).join(' › ')}
+                        </span>
+                      )}
+                      {exifStage?.stage_ref && (
+                        <span className="tag success">Tappa SICAI: {exifStage.stage_ref} ({Math.round(exifStage.distance_m)} m dal tracciato)</span>
+                      )}
+                      {exifStage !== undefined && !exifStage?.stage_ref && (
+                        <span className="tag warning">Fuori dal tracciato SICAI — sposta il marker</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="btn-row" style={{ margin: 0, flexShrink: 0 }}>
+                  <button className="btn btn-secondary" onClick={() => setStep(0)}>Indietro</button>
+                  <button className="btn btn-primary" disabled={!canProceedStep1 || submitting} onClick={handleUploadDraft}>
+                    {submitting ? <span className="loading-dots">Caricamento</span> : 'Carica e continua'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* In vista normale: info e bottoni sotto la mappa */}
+          {!mapFullscreen && (
+            <>
+              {position && (
+                <div style={{ marginTop: 8, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span className="tag success">{position.lat.toFixed(5)}, {position.lng.toFixed(5)}</span>
+                  {exifGeoInfo && (
+                    <span className="tag">
+                      {[exifGeoInfo.regione, exifGeoInfo.provincia, exifGeoInfo.comune].filter(Boolean).join(' › ')}
+                    </span>
+                  )}
+                  {exifStage?.stage_ref && (
+                    <span className="tag success">Tappa SICAI: {exifStage.stage_ref} ({Math.round(exifStage.distance_m)} m dal tracciato)</span>
+                  )}
+                  {exifStage !== undefined && !exifStage?.stage_ref && (
+                    <span className="tag warning">
+                      Nessuna tappa SICAI nel raggio di {Math.round(Number(import.meta.env.VITE_STAGE_MAX_DISTANCE_M || 5000) / 1000)} km — sposta il marker nei pressi del Sentiero Italia.
+                    </span>
+                  )}
+                </div>
+              )}
+              <div className="btn-row">
+                <button className="btn btn-secondary" onClick={() => setStep(0)}>Indietro</button>
+                <button className="btn btn-primary" disabled={!canProceedStep1 || submitting} onClick={handleUploadDraft}>
+                  {submitting ? <span className="loading-dots">Caricamento</span> : 'Carica e continua'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 

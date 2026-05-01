@@ -19,7 +19,7 @@ const CIRCLE_STYLE_OUT = {
   interactive: false,
 };
 
-export default function LocationPicker({ initialPosition, onChange, withinThreshold = true }) {
+export default function LocationPicker({ initialPosition, onChange, withinThreshold = true, fullscreen = false }) {
   const mapRef = useRef(null);
   const leafletRef = useRef(null);
   const markerRef = useRef(null);
@@ -105,6 +105,12 @@ export default function LocationPicker({ initialPosition, onChange, withinThresh
   useEffect(() => {
     circleRef.current?.setStyle(withinThreshold ? CIRCLE_STYLE_OK : CIRCLE_STYLE_OUT);
   }, [withinThreshold]);
+
+  // Resize map when fullscreen state changes
+  useEffect(() => {
+    if (!leafletRef.current) return;
+    setTimeout(() => leafletRef.current?.invalidateSize(), 50);
+  }, [fullscreen]);
 
   return <div ref={mapRef} className="map-picker" />;
 }

@@ -128,6 +128,39 @@ button { cursor: pointer; }
 /* Map picker (inside upload) */
 .map-picker { height: 280px; border-radius: 6px; overflow: hidden; border: 1px solid #ccc; margin-bottom: 12px; }
 
+/* Map outer wrapper */
+.map-outer { position: relative; }
+
+/* Fullscreen overlay */
+.map-outer--fullscreen {
+  position: fixed; inset: 0; z-index: 1500;
+  display: flex; flex-direction: column;
+  background: #000;
+}
+.map-outer--fullscreen .map-picker {
+  flex: 1; height: auto; border-radius: 0; border: none; margin-bottom: 0;
+}
+
+/* Expand/compress toggle button */
+.map-fullscreen-toggle {
+  position: absolute; top: 10px; right: 10px; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 6px;
+  background: rgba(255,255,255,0.92); border: 1px solid #ccc;
+  color: #333; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  transition: background .15s;
+}
+.map-fullscreen-toggle:hover { background: #fff; }
+
+/* Bottom panel in fullscreen */
+.map-fullscreen-panel {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; background: #fff;
+  border-top: 1px solid #ddd; flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.map-fullscreen-info { flex: 1; min-width: 0; }
+
 /* Search page */
 .search-page { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
 .search-page h1 { font-size: 1.4rem; margin-bottom: 16px; color: #cc0000; }
