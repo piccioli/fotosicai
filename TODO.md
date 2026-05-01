@@ -1,6 +1,5 @@
-# TODO
 
-- [ ] Processo di validazione: pubblicare solo foto accettate dal backend
+# TODO
 
 - [ ] Upload multiplo: funzionalità per caricare più foto contemporaneamente
 
@@ -12,6 +11,8 @@
 
 
 # DONE
+- [X] Processo di validazione: pubblicare solo foto accettate dal backend. Aggiungere un campo alle foto che riguarda la validazione da parte di un amministratore che accede al backend. Dividere lo stato di verifica email (non verificato / verificato) dallo stato di validazione della email (validato / non validato ). Solo le foto con email verificata e validate vengono publicate sul frontend.
+
 - [X] Admin web UI: interfaccia admin su /admin con login da .env, dashboard statistiche, elenco utenti, elenco foto con filtri, elimina foto
 
 - [X] Processo di validazione: pubblicare solo foto inviate da indirizzo email validato. (per testare il funzionamento in locale voglio usare mailpit configurazione in .env, in produzione voglio usare gmail, configurazione in .env)

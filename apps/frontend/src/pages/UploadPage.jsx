@@ -40,9 +40,8 @@ export default function UploadPage() {
   const [exifGeoInfo, setExifGeoInfo] = useState(null); // {regione, provincia, comune}
   const [exifStage, setExifStage] = useState(undefined); // {stage_ref, distance_m} | null | undefined(loading)
   const [autoreName, setAutoreName] = useState(() => localStorage.getItem('fotosicai_autore') || '');
-  const [rememberName, setRememberName] = useState(() => !!localStorage.getItem('fotosicai_autore'));
   const [email, setEmail] = useState(() => localStorage.getItem('fotosicai_email') || '');
-  const [rememberEmail, setRememberEmail] = useState(() => !!localStorage.getItem('fotosicai_email'));
+  const [rememberData, setRememberData] = useState(() => !!(localStorage.getItem('fotosicai_autore') || localStorage.getItem('fotosicai_email')));
   const [position, setPosition] = useState(null); // {lat, lng}
   const [draft, setDraft] = useState(null); // response from POST /api/upload
   const [titolo, setTitolo] = useState('');
@@ -228,17 +227,6 @@ export default function UploadPage() {
             <label>Il tuo nome / Autore *</label>
             <input type="text" placeholder="Nome Cognome" value={autoreName} onChange={(e) => setAutoreName(e.target.value)} maxLength={80} />
           </div>
-          <div className="checkbox-row" style={{ marginBottom: 16 }}>
-            <input
-              type="checkbox"
-              id="remember-name"
-              checked={rememberName}
-              onChange={(e) => setRememberName(e.target.checked)}
-            />
-            <label htmlFor="remember-name" style={{ fontSize: 13, color: '#555' }}>
-              Ricorda il mio nome per i prossimi caricamenti
-            </label>
-          </div>
           <div className="field">
             <label>La tua email *</label>
             <input
@@ -255,12 +243,12 @@ export default function UploadPage() {
           <div className="checkbox-row" style={{ marginBottom: 4 }}>
             <input
               type="checkbox"
-              id="remember-email"
-              checked={rememberEmail}
-              onChange={(e) => setRememberEmail(e.target.checked)}
+              id="remember-data"
+              checked={rememberData}
+              onChange={(e) => setRememberData(e.target.checked)}
             />
-            <label htmlFor="remember-email" style={{ fontSize: 13, color: '#555' }}>
-              Ricorda la mia email per i prossimi caricamenti
+            <label htmlFor="remember-data" style={{ fontSize: 13, color: '#555' }}>
+              Ricorda i miei dati per i prossimi caricamenti
             </label>
           </div>
           <div className="btn-row">
@@ -268,10 +256,13 @@ export default function UploadPage() {
               className="btn btn-primary"
               disabled={!canProceedStep0}
               onClick={() => {
-                if (rememberName) localStorage.setItem('fotosicai_autore', autoreName.trim());
-                else localStorage.removeItem('fotosicai_autore');
-                if (rememberEmail) localStorage.setItem('fotosicai_email', email.trim().toLowerCase());
-                else localStorage.removeItem('fotosicai_email');
+                if (rememberData) {
+                  localStorage.setItem('fotosicai_autore', autoreName.trim());
+                  localStorage.setItem('fotosicai_email', email.trim().toLowerCase());
+                } else {
+                  localStorage.removeItem('fotosicai_autore');
+                  localStorage.removeItem('fotosicai_email');
+                }
                 setStep(1);
               }}
             >
