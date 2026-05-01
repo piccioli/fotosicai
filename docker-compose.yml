@@ -26,6 +26,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        VITE_POSITION_CIRCLE_RADIUS_M: ${VITE_POSITION_CIRCLE_RADIUS_M:-5000}
     restart: unless-stopped
     depends_on:
       backend:
