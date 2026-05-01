@@ -33,6 +33,8 @@ function findConsentPath() {
 process.env.DATABASE_PATH = ':memory:';
 process.env.STORAGE_DIR = TEST_STORAGE_DIR;
 process.env.ADMIN_TOKEN = 'test-admin-token';
+process.env.ADMIN_USERNAME = 'testadmin';
+process.env.ADMIN_PASSWORD = 'testpass';
 process.env.CONSENT_VERSION = '2026-04-30';
 process.env.CONSENT_PATH = findConsentPath();
 process.env.NODE_ENV = 'test';
@@ -670,5 +672,83 @@ describe('Upload — flusso completo', () => {
     // 18. Più nella lista
     const listAfter = await request(app).get('/api/images');
     expect(listAfter.body.some((i) => i.id === id)).toBe(false);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// Admin — nuovi endpoint (login, me, stats, users, images)
+// ══════════════════════════════════════════════════════════════════════════
+
+describe('Admin — nuovi endpoint', () => {
+  test('POST /api/admin/login credenziali sbagliate → 401', async () => {
+    const res = await request(app)
+      .post('/api/admin/login')
+      .send({ username: 'wrong', password: 'wrong' });
+    expect(res.status).toBe(401);
+  });
+
+  test('POST /api/admin/login credenziali corrette → token', async () => {
+    const res = await request(app)
+      .post('/api/admin/login')
+      .send({ username: 'testadmin', password: 'testpass' });
+    expect(res.status).toBe(200);
+    expect(res.body.token).toBeTruthy();
+    expect(res.body.expiresAt).toBeTruthy();
+  });
+
+  test('GET /api/admin/me senza token → 401', async () => {
+    const res = await request(app).get('/api/admin/me');
+    expect(res.status).toBe(401);
+  });
+
+  test('GET /api/admin/me con session token → 200', async () => {
+    const loginRes = await request(app)
+      .post('/api/admin/login')
+      .send({ username: 'testadmin', password: 'testpass' });
+    const { token } = loginRes.body;
+
+    const res = await request(app)
+      .get('/api/admin/me')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.username).toBe('testadmin');
+  });
+
+  test('GET /api/admin/stats → struttura corretta', async () => {
+    const res = await request(app)
+      .get('/api/admin/stats')
+      .set('Authorization', 'Bearer test-admin-token');
+    expect(res.status).toBe(200);
+    expect(typeof res.body.total_uploaded).toBe('number');
+    expect(typeof res.body.total_published).toBe('number');
+    expect(typeof res.body.total_pending).toBe('number');
+    expect(Array.isArray(res.body.by_stage)).toBe(true);
+    expect(Array.isArray(res.body.by_region)).toBe(true);
+  });
+
+  test('GET /api/admin/users → array', async () => {
+    const res = await request(app)
+      .get('/api/admin/users')
+      .set('Authorization', 'Bearer test-admin-token');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  test('GET /api/admin/images → struttura corretta', async () => {
+    const res = await request(app)
+      .get('/api/admin/images')
+      .set('Authorization', 'Bearer test-admin-token');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.items)).toBe(true);
+    expect(typeof res.body.total).toBe('number');
+    expect(res.body.page_size).toBe(50);
+  });
+
+  test('GET /api/admin/images?status=published → solo published', async () => {
+    const res = await request(app)
+      .get('/api/admin/images?status=published')
+      .set('Authorization', 'Bearer test-admin-token');
+    expect(res.status).toBe(200);
+    res.body.items.forEach((img) => expect(img.status).toBe('published'));
   });
 });

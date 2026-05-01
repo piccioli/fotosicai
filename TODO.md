@@ -1,7 +1,6 @@
-# PROGRESS
-
 # TODO
-- [ ] Processo di validazione: pubblicare solo foto accettate dal backend e con conferma email da parte dell'utente
+
+- [ ] Processo di validazione: pubblicare solo foto accettate dal backend
 
 - [ ] Upload multiplo: funzionalità per caricare più foto contemporaneamente
 
@@ -13,6 +12,8 @@
 
 
 # DONE
+- [X] Admin web UI: interfaccia admin su /admin con login da .env, dashboard statistiche, elenco utenti, elenco foto con filtri, elimina foto
+
 - [X] Processo di validazione: pubblicare solo foto inviate da indirizzo email validato. (per testare il funzionamento in locale voglio usare mailpit configurazione in .env, in produzione voglio usare gmail, configurazione in .env)
 
 - [X] Legal: termini e condizioni, cessione della proprietà al CAI

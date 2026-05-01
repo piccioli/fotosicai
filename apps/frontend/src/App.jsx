@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, Outlet } from 'react-router-dom';
 import MapPage from './pages/MapPage.jsx';
 import UploadPage from './pages/UploadPage.jsx';
 import VerifyPendingPage from './pages/VerifyPendingPage.jsx';
 import SearchPage from './pages/SearchPage.jsx';
 import PhotoDetailPage from './pages/PhotoDetailPage.jsx';
+import AdminLogin from './pages/admin/AdminLogin.jsx';
+import AdminLayout from './pages/admin/AdminLayout.jsx';
+import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+import AdminUsers from './pages/admin/AdminUsers.jsx';
+import AdminPhotos from './pages/admin/AdminPhotos.jsx';
 
 /* ── SVG icons ─────────────────────────────────────────────────────────── */
 
@@ -98,13 +103,12 @@ function InfoPopup({ onClose }) {
   );
 }
 
-/* ── App ───────────────────────────────────────────────────────────────── */
+/* ── Public layout (header + main) ─────────────────────────────────────── */
 
-export default function App() {
+function PublicLayout() {
   const [showInfo, setShowInfo] = useState(false);
-
   return (
-    <BrowserRouter>
+    <>
       <header className="app-header">
         <img className="app-header__logo" src="/logo-sicai.png" alt="SICAI" />
         <span className="app-header__title">FotoSICAI</span>
@@ -117,18 +121,35 @@ export default function App() {
           </button>
         </nav>
       </header>
-
       <main className="app-main">
-        <Routes>
+        <Outlet />
+      </main>
+      {showInfo && <InfoPopup onClose={() => setShowInfo(false)} />}
+    </>
+  );
+}
+
+/* ── App ───────────────────────────────────────────────────────────────── */
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route element={<PublicLayout />}>
           <Route path="/" element={<MapPage />} />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/upload/pending" element={<VerifyPendingPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/foto/:id" element={<PhotoDetailPage />} />
-        </Routes>
-      </main>
+        </Route>
 
-      {showInfo && <InfoPopup onClose={() => setShowInfo(false)} />}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="foto" element={<AdminPhotos />} />
+        </Route>
+      </Routes>
     </BrowserRouter>
   );
 }
