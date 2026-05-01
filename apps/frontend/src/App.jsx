@@ -57,16 +57,26 @@ function InfoPopup({ onClose }) {
         <h2 style={{ fontSize: '1.1rem', marginBottom: 6 }}>FotoSICAI</h2>
         <p style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
           Piattaforma fotografica del <strong>Sentiero Italia CAI</strong> —
-          il sentiero escursionistico più lungo d'Italia, oltre 7.000 km da Trieste
+          il sentiero escursionistico più lungo d'Italia, oltre 8.000 km da Trieste
           a Santa Teresa Gallura.
         </p>
-        <p style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 16 }}>
+        <p style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
           Carica le tue foto georeferenziate lungo il tracciato, arricchiscile con
           titolo e descrizione generati da intelligenza artificiale, e contribuisci
           alla memoria visiva del Sentiero Italia.
         </p>
-        <div style={{ fontSize: 12, color: '#888', borderTop: '1px solid #eee', paddingTop: 12 }}>
-          Sviluppato per <strong>Montagna Servizi / SICAI</strong>
+        <p style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 16 }}>
+          Le fotografie caricate vengono cedute al <strong>Club Alpino Italiano</strong> con
+          licenza <strong>CC BY 4.0</strong>.
+        </p>
+        <div style={{ fontSize: 11, color: '#888', borderTop: '1px solid #eee', paddingTop: 12, lineHeight: 1.5 }}>
+          Iniziativa realizzata da <strong>Montagna Servizi SCPA</strong> nell'ambito
+          dell'affidamento di servizi per l'avvio dell'attuazione del Piano Progetto
+          Sentiero Italia CAI — CIG B165634123 (2024–2026).
+        </div>
+        <div style={{ fontSize: 11, color: '#aaa', borderTop: '1px solid #eee', paddingTop: 10, marginTop: 8, lineHeight: 1.5 }}>
+          Software: FotoSICAI v{__APP_VERSION__} — licenza{' '}
+          <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT</a>
         </div>
       </div>
     </div>
