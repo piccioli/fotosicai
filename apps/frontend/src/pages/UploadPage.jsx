@@ -18,6 +18,7 @@ export default function UploadPage() {
   const [exifGps, setExifGps] = useState(null);
   const [exifDatetime, setExifDatetime] = useState(null);
   const [exifGeoInfo, setExifGeoInfo] = useState(null); // {regione, provincia, comune}
+  const [exifStage, setExifStage] = useState(undefined); // {stage_ref, distance_m} | null | undefined(loading)
   const [autoreName, setAutoreName] = useState('');
   const [position, setPosition] = useState(null); // {lat, lng}
   const [draft, setDraft] = useState(null); // response from POST /api/upload
@@ -39,6 +40,7 @@ export default function UploadPage() {
     setError(null);
     setExifGps(null);
     setExifGeoInfo(null);
+    setExifStage(undefined);
     // Parse EXIF client-side for GPS preview
     try {
       const data = await Exifr.parse(f, { gps: true });
@@ -46,11 +48,16 @@ export default function UploadPage() {
         const gps = { lat: data.latitude, lng: data.longitude };
         setExifGps(gps);
         setPosition(gps);
-        // Reverse geocode via backend (usa cache Nominatim)
+        // Reverse geocode + tappa SICAI in parallelo
         fetch(`/api/geocode?lat=${gps.lat}&lng=${gps.lng}`)
           .then((r) => r.ok ? r.json() : null)
           .then((geo) => { if (geo) setExifGeoInfo(geo); })
           .catch(() => {});
+
+        fetch(`/api/stages/nearest?lat=${gps.lat}&lng=${gps.lng}`)
+          .then((r) => r.ok ? r.json() : null)
+          .then((s) => setExifStage(s))
+          .catch(() => setExifStage(null));
       }
       if (data?.DateTimeOriginal) {
         const raw = String(data.DateTimeOriginal);
@@ -160,6 +167,17 @@ export default function UploadPage() {
                 </span>
               ) : (
                 <span className="tag" style={{ color: '#888' }}>Identificazione luogo…</span>
+              )}
+              {exifStage === undefined && (
+                <span className="tag" style={{ color: '#888' }}>Ricerca tappa SICAI…</span>
+              )}
+              {exifStage !== undefined && exifStage?.stage_ref && (
+                <span className="tag success">Tappa SICAI: {exifStage.stage_ref} ({(exifStage.distance_m / 1000).toFixed(1)} km dal tracciato)</span>
+              )}
+              {exifStage !== undefined && !exifStage?.stage_ref && (
+                <span className="tag warning">
+                  Nessuna tappa SICAI nel raggio di {Math.round(Number(import.meta.env.VITE_POSITION_CIRCLE_RADIUS_M || 5000) / 1000)} km — la foto deve essere scattata nei pressi del Sentiero Italia. Puoi cambiare la posizione manualmente nel passo successivo.
+                </span>
               )}
             </div>
           )}
