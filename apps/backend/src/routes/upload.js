@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 
 const upload = require('../middleware/upload');
@@ -10,6 +11,9 @@ const { reverseGeocode } = require('../services/nominatim');
 const { findClosestStage } = require('../services/stages');
 const { generateTitleCaption } = require('../services/ai');
 const { deleteImageFiles } = require('../services/storage');
+const { sendVerificationEmail } = require('../services/mailer');
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // POST /api/upload — receive file, extract metadata, save as draft
 router.post('/', upload.single('file'), async (req, res, next) => {
@@ -19,6 +23,11 @@ router.post('/', upload.single('file'), async (req, res, next) => {
     const { autore_nome } = req.body;
     if (!autore_nome || !autore_nome.trim()) {
       return res.status(400).json({ error: 'autore_nome è obbligatorio' });
+    }
+
+    const email = (req.body.email || '').trim().toLowerCase();
+    if (!email || !EMAIL_RE.test(email)) {
+      return res.status(400).json({ error: 'email è obbligatoria e deve essere valida' });
     }
 
     const id = uuidv4();
@@ -61,15 +70,15 @@ router.post('/', upload.single('file'), async (req, res, next) => {
       `INSERT INTO images (id, status, file_path, thumbnail_path, medium_path, width, height,
         lat, lng, position_source, paese, regione, provincia, comune,
         stage_id, stage_ref, stage_distance_m, data_scatto,
-        titolo, caption, ai_generated, autore_nome, consenso, consenso_version, consenso_accepted_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        titolo, caption, ai_generated, autore_nome, email, consenso, consenso_version, consenso_accepted_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ).run(
       id, 'draft', paths.original, paths.thumbnail, paths.medium, width, height,
       lat ?? 0, lng ?? 0, positionSource,
       geoInfo.paese ?? null, geoInfo.regione ?? null, geoInfo.provincia ?? null, geoInfo.comune ?? null,
       stageInfo.stage_id, stageInfo.stage_ref, stageInfo.distance_m,
       exifDatetime ?? null,
-      '', '', 1, autore_nome.trim(), 0, '', ''
+      '', '', 1, autore_nome.trim(), email, 0, '', ''
     );
 
     res.json({
@@ -118,7 +127,7 @@ router.post('/:id/ai', async (req, res, next) => {
   }
 });
 
-// POST /api/upload/:id/finalize — publish the image
+// POST /api/upload/:id/finalize — pubblica la foto (con verifica email)
 router.post('/:id/finalize', async (req, res, next) => {
   try {
     const { titolo, caption, autore_nome, lat, lng, consenso_version, consenso_accepted } = req.body;
@@ -147,9 +156,55 @@ router.post('/:id/finalize', async (req, res, next) => {
     }
 
     const now = new Date().toISOString();
+    const finalTitolo = titolo.trim().slice(0, 60);
+    const finalCaption = (caption || '').trim().slice(0, 280);
+    const finalAutore = autore_nome.trim();
+    const consentVer = consenso_version || process.env.CONSENT_VERSION || '';
+    const aiGenerated = req.body.ai_generated === false ? 0 : 1;
+
+    const email = img.email;
+
+    // Check trust cache: email verified within the trust window → publish directly
+    const trustDays = parseInt(process.env.EMAIL_VERIFICATION_TRUST_DAYS || '30', 10);
+    const trusted = db
+      .prepare("SELECT email FROM verified_emails WHERE email = ? AND verified_at >= datetime('now', ?)")
+      .get(email, `-${trustDays} days`);
+
+    if (trusted) {
+      db.prepare(
+        `UPDATE images SET
+          status = 'published', verified_at = ?,
+          titolo = ?, caption = ?,
+          autore_nome = ?,
+          lat = ?, lng = ?,
+          paese = ?, regione = ?, provincia = ?, comune = ?,
+          stage_id = ?, stage_ref = ?, stage_distance_m = ?,
+          ai_generated = ?,
+          consenso = 1, consenso_version = ?, consenso_accepted_at = ?
+         WHERE id = ?`
+      ).run(
+        now, finalTitolo, finalCaption, finalAutore,
+        finalLat, finalLng,
+        geoInfo.paese ?? null, geoInfo.regione ?? null, geoInfo.provincia ?? null, geoInfo.comune ?? null,
+        stageInfo.stage_id, stageInfo.stage_ref, stageInfo.distance_m,
+        aiGenerated, consentVer, now, img.id
+      );
+
+      const PUBLIC_BASE = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
+      return res.json({
+        published: true,
+        id: img.id,
+        url: `${PUBLIC_BASE}/?photo=${img.id}&verified=1`,
+      });
+    }
+
+    // No trust cache hit — set pending_verification and send confirmation email
+    const token = crypto.randomBytes(32).toString('hex');
+
     db.prepare(
       `UPDATE images SET
-        status = 'published',
+        status = 'pending_verification',
+        verification_token = ?, verification_sent_at = ?,
         titolo = ?, caption = ?,
         autore_nome = ?,
         lat = ?, lng = ?,
@@ -159,24 +214,17 @@ router.post('/:id/finalize', async (req, res, next) => {
         consenso = 1, consenso_version = ?, consenso_accepted_at = ?
        WHERE id = ?`
     ).run(
-      titolo.trim().slice(0, 60),
-      (caption || '').trim().slice(0, 280),
-      autore_nome.trim(),
+      token, now,
+      finalTitolo, finalCaption, finalAutore,
       finalLat, finalLng,
       geoInfo.paese ?? null, geoInfo.regione ?? null, geoInfo.provincia ?? null, geoInfo.comune ?? null,
       stageInfo.stage_id, stageInfo.stage_ref, stageInfo.distance_m,
-      req.body.ai_generated === false ? 0 : 1,
-      consenso_version || process.env.CONSENT_VERSION || '',
-      now,
-      img.id
+      aiGenerated, consentVer, now, img.id
     );
 
-    const PUBLIC_BASE = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
-    res.json({
-      id: img.id,
-      status: 'published',
-      url: `${PUBLIC_BASE}/?photo=${img.id}`,
-    });
+    await sendVerificationEmail({ to: email, photoId: img.id, token, titolo: finalTitolo });
+
+    res.json({ pending: true, id: img.id, email });
   } catch (err) {
     next(err);
   }
