@@ -8,14 +8,13 @@
 
 - [X] Stress test: script stress_test che aggiunge X user e Y (+/- 10% random) foto per user sparse in un buffer di 500 m del SICAI in tutta italia, l'immagine la prende da fixtures, email e altri dati te li devi inventare, i dati aggiuntivi della immagine (titolo + descrizione) inventali random senza chiamare AI
 
-# PROGRESS
+- [X] Upload multiplo: Thumbnail al caricamento. Oltre a GPX ok (verde) / non ok se il GPS non è presente (rosso), aggiungere anche uno stato in cui GPX in grigio per quelle foto che hanno GPX presente ma sono fuori dal buffer SICAI (VITE_STAGE_MAX_DISTANCE_M)
 
+# PROGRESS
 
 # TODO
 
-- [ ] Upload multiplo: Thumbnail al caricamento. Oltre a GPX ok (verde) / non ok se il GPS non è presente (rosso), aggiungere anche uno stato in cui GPX in grigio per quelle foto che hanno GPX presente ma sono fuori dal buffer SICAI
-
-- [ ] Upload multiplo: revisione del flusso di caricamento in base alla presenza di foto con GPX ok e dentro il buffer SICAI, piuttosto che foto che non sono nelle consizioni di cui sopra. 
+- [ ] Upload multiplo: revisione del flusso di caricamento in base alla presenza di foto con GPX ok e dentro il buffer SICAI (VITE_STAGE_MAX_DISTANCE_M), piuttosto che foto che non sono nelle consizioni di cui sopra. 
 CASO1: TUTTE le foto sono con GPX OK e dentro il buffer SICAI -> si passa dallo step1. allo step 4. (revisione) con una finestra intermedia in cui vengono effettuate tutte le chiamate AI per aggiungere titolo e descrizione
 CASO2: ci sono ALCUNE foto che non sono nella condizione GPX OK + buffer SICAI ok. Prima di passa per le foto che non sono nella condizione si revisionano gli step 2 e 3 al termine di questa revisione si lancia arricchimento AI per tutte le foto che hanno GPX + buffer SICAI ok e si manda alla revisione nello step 4 per tutte le foto caricate
 
@@ -34,6 +33,9 @@ CASO2: ci sono ALCUNE foto che non sono nella condizione GPX OK + buffer SICAI o
 - [ ] Migliorare l'interfaccia di visualizzazione della mappa con tutte le foto
 - [ ] Migliorare l'interfaccia di visualizzazione della funzionalità di ricerca con filtro
 
+# IDEAS
+
+- [ ] Script che analizza da Foto del MAC tutte le foto presenti e verifica se hanno posizione, nel caso la abbiano verificano che siano nel buffer SICAI, e se lo sono le copia (con info posizione) in una cartella con sottocartelle per regione, sottocartelle per tappa, e rinomina con SICAI_Foto_AlessioPiccioli_[Regione]_[TAPPA].jpeg
 
 # DONE
 - [X] Revisione helper dei campi in funzione CAI, specificare meglio perché indirizzo email

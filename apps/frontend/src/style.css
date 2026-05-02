@@ -295,9 +295,30 @@ button { cursor: pointer; }
 .photo-thumb__remove:hover:not(:disabled) { background: rgba(200,0,0,.8); }
 .photo-thumb__badge {
   position: absolute; top: 4px; left: 4px;
-  background: rgba(0,100,0,.7); color: #fff;
-  font-size: 10px; padding: 2px 5px; border-radius: 4px;
+  color: #fff; font-size: 10px; padding: 2px 5px; border-radius: 4px;
 }
+.photo-thumb__badge--ok       { background: rgba(30,130,30,.85); }
+.photo-thumb__badge--offtrail { background: rgba(110,110,110,.85); }
+.photo-thumb__badge--nogps    { background: rgba(200,30,30,.85); }
+.photo-thumb__badge--loading  { background: rgba(160,160,160,.60); }
+
+/* GPS badge legend (step 0, below thumbnail grid) */
+.gps-legend {
+  margin-top: 10px; margin-bottom: 4px;
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 10px 12px; background: #f8f9fa; border-radius: 6px;
+  font-size: 12px; color: #444; line-height: 1.45;
+}
+.gps-legend__item {
+  display: flex; align-items: baseline; gap: 8px;
+}
+.gps-legend__dot {
+  flex-shrink: 0; width: 10px; height: 10px; border-radius: 3px;
+  display: inline-block; position: relative; top: 1px;
+}
+.gps-legend__dot--ok       { background: rgba(30,130,30,.85); }
+.gps-legend__dot--offtrail { background: rgba(110,110,110,.85); }
+.gps-legend__dot--nogps    { background: rgba(200,30,30,.85); }
 
 /* Per-photo progress badge (steps 1-2 for multi-photo) */
 .photo-progress-badge {

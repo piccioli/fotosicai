@@ -350,16 +350,32 @@ export default function UploadPage() {
           </div>
 
           {photos.length > 0 && (
-            <div className="photo-thumb-grid">
-              {photos.map(p => (
-                <div className="photo-thumb" key={p.id}>
-                  <img src={p.previewUrl} alt={p.file.name} />
-                  {p.exifGps && <div className="photo-thumb__badge">GPS</div>}
-                  <button className="photo-thumb__remove" disabled={submitting} onClick={() => removePhoto(p.id)} title="Rimuovi">✕</button>
-                  <div className="photo-thumb__name">{p.file.name}</div>
+            <>
+              <div className="photo-thumb-grid">
+                {photos.map(p => (
+                  <div className="photo-thumb" key={p.id}>
+                    <img src={p.previewUrl} alt={p.file.name} />
+                    <GpsBadge exifGps={p.exifGps} stage={p.stage} />
+                    <button className="photo-thumb__remove" disabled={submitting} onClick={() => removePhoto(p.id)} title="Rimuovi">✕</button>
+                    <div className="photo-thumb__name">{p.file.name}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="gps-legend">
+                <div className="gps-legend__item">
+                  <span className="gps-legend__dot gps-legend__dot--ok" />
+                  <span><strong>GPS sul sentiero</strong> — posizione e tappa verranno arricchite automaticamente; la foto sarà poi revisionata dal team SICAI.</span>
                 </div>
-              ))}
-            </div>
+                <div className="gps-legend__item">
+                  <span className="gps-legend__dot gps-legend__dot--offtrail" />
+                  <span><strong>GPS fuori dal Sentiero Italia</strong> — i dati di posizione dovranno essere inseriti manualmente nel passo successivo.</span>
+                </div>
+                <div className="gps-legend__item">
+                  <span className="gps-legend__dot gps-legend__dot--nogps" />
+                  <span><strong>Nessun GPS</strong> — la posizione dovrà essere indicata manualmente sulla mappa nel passo successivo.</span>
+                </div>
+              </div>
+            </>
           )}
 
           <div className="field" style={{ marginTop: 16 }}>
@@ -881,6 +897,20 @@ function PositionMeta({ position, geoInfo, stage }) {
       )}
     </>
   );
+}
+
+function GpsBadge({ exifGps, stage }) {
+  const maxKm = Math.round(Number(import.meta.env.VITE_STAGE_MAX_DISTANCE_M || 5000) / 1000);
+  if (!exifGps) {
+    return <div className="photo-thumb__badge photo-thumb__badge--nogps" title="Nessun dato GPS nella foto">No GPS</div>;
+  }
+  if (stage === undefined) {
+    return <div className="photo-thumb__badge photo-thumb__badge--loading" title="Verifica posizione in corso…">GPS…</div>;
+  }
+  if (stage?.stage_ref) {
+    return <div className="photo-thumb__badge photo-thumb__badge--ok" title={`GPS presente · tappa ${stage.stage_ref} (${Math.round(stage.distance_m)} m)`}>GPS</div>;
+  }
+  return <div className="photo-thumb__badge photo-thumb__badge--offtrail" title={`GPS presente, ma fuori dal buffer SICAI (${maxKm} km)`}>GPS</div>;
 }
 
 function StepIndicator({ current, steps }) {
