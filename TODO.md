@@ -1,17 +1,23 @@
 - [X] Upload multiplo: implementare funzionalità per caricare più foto contemporaneamente. Nello Step 1. deve essere possibile selezionare più foto contemporaneamente che vengono mostrate come thubnail (anche una sola), nel caso in cui le foto selezionate siano più di una: lo step 2 e 3 deve essere ripetuto per ciascuna foto, nel riepilogo si devono mostrare tutte le foto selezionate con unico tasto publica.
 
+- [X] Upload multiplo: modifica UX del campo in cui si dice che è possibile fare anche il drag and drop (bottone)
+
+- [X] Inverti step 4 e 5: il 4 deve diventare riepilogo e il 5 accettazione + publica
+
+- [X] Miglioramento dello step 4: nel riepilogo per ciascuna foto, deve essere presente un bottone che permette di modificare eventualmente i dati: apre una modale con thumb della foto, mappa che permette di modificare la posizione (cambia quindi anche regione / provincia / comnune), campi titolo e descrizione modificabili, bottone di conferma e chiudi che mostra i dati aggiornati della foto modificata
+
+- [X] Stress test: script stress_test che aggiunge X user e Y (+/- 10% random) foto per user sparse in un buffer di 500 m del SICAI in tutta italia, l'immagine la prende da fixtures, email e altri dati te li devi inventare, i dati aggiuntivi della immagine (titolo + descrizione) inventali random senza chiamare AI
+
 # PROGRESS
 
-- [ ] Upload multiplo: modifica UX del campo in cui si dice che è possibile fare anche il drag and drop (bottone)
 
 # TODO
 
-- [ ] Inverti step 4 e 5: il 4 deve diventare riepilogo e il 5 accettazione + publica
+- [ ] Upload multiplo: Thumbnail al caricamento. Oltre a GPX ok (verde) / non ok se il GPS non è presente (rosso), aggiungere anche uno stato in cui GPX in grigio per quelle foto che hanno GPX presente ma sono fuori dal buffer SICAI
 
-
-- [ ] Upload multiplo: skip step 2. e 3. se allo step 1. alcune delle foto caricate hanno il GPX e sono a meno di VITE_STAGE_MAX_DISTANCE_M dal SICAI, puoi proporre un bottone che salta le fasi 2 e 3 e va direttamente alla 4 e poi alla 5. In questo caso per ciascuna foto valida (GPX + nei pressi del SICAI) devi fare una chiamata AI che compila titolo e descrizione
-
-- [ ] Stress test: script stress_test che aggiunge X user e Y (+/- 10% random) foto per user sparse in un buffer di 500 m del SICAI in tutta italia, l'immagine la prende da fixtures, email e altri dati te li devi inventare, i dati aggiuntivi della immagine (titolo + descrizione) inventali random senza chiamare AI
+- [ ] Upload multiplo: revisione del flusso di caricamento in base alla presenza di foto con GPX ok e dentro il buffer SICAI, piuttosto che foto che non sono nelle consizioni di cui sopra. 
+CASO1: TUTTE le foto sono con GPX OK e dentro il buffer SICAI -> si passa dallo step1. allo step 4. (revisione) con una finestra intermedia in cui vengono effettuate tutte le chiamate AI per aggiungere titolo e descrizione
+CASO2: ci sono ALCUNE foto che non sono nella condizione GPX OK + buffer SICAI ok. Prima di passa per le foto che non sono nella condizione si revisionano gli step 2 e 3 al termine di questa revisione si lancia arricchimento AI per tutte le foto che hanno GPX + buffer SICAI ok e si manda alla revisione nello step 4 per tutte le foto caricate
 
 - [ ] Backend UX: /users paginazione dei risultati
 
@@ -21,10 +27,11 @@
 
 ====== GOLIVE DOPO ACCETTAZIONE CAI ========
 
+# BACKLOG
+
+- [ ] Nel dettaglio publico della 
 - [ ] Migliorare il funzionamento da mobile (UI)
-
 - [ ] Migliorare l'interfaccia di visualizzazione della mappa con tutte le foto
-
 - [ ] Migliorare l'interfaccia di visualizzazione della funzionalità di ricerca con filtro
 
 

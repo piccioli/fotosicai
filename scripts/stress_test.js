@@ -22,17 +22,19 @@ const USERS            = Math.max(1, parseInt(process.argv[2] || '5',  10));
 const PHOTOS_PER_USER  = Math.max(1, parseInt(process.argv[3] || '10', 10));
 const JITTER           = 0.10;   // ±10 %
 const TRAIL_BUFFER_M   = 500;    // massimo scostamento dal tracciato
+const MAX_GEO_RETRIES  = 10;
 
 // ── reuse backend services ────────────────────────────────────────────────────
-const { getDb }          = require('/app/src/db/index.js');
-const { loadStages }     = require('/app/src/services/stages.js');
-const { processImage }   = require('/app/src/services/images.js');
+const { getDb }           = require('/app/src/db/index.js');
+const { loadStages }      = require('/app/src/services/stages.js');
+const { processImage }    = require('/app/src/services/images.js');
+const { reverseGeocode }  = require('/app/src/services/nominatim.js');
 
 loadStages();
 const db = getDb();
 
 // ── fixture images ────────────────────────────────────────────────────────────
-const FIXTURE_DIR = '/app/tests/fixtures';
+const FIXTURE_DIR = process.env.FIXTURE_DIR || '/app/tests/fixtures';
 const fixtures = fs.readdirSync(FIXTURE_DIR)
   .filter(f => /\.(jpe?g|png)$/i.test(f))
   .map(f => path.join(FIXTURE_DIR, f));
@@ -71,6 +73,7 @@ console.log(`[stress] ${segments.length} segmenti trail caricati`);
 // ── geometry helpers ──────────────────────────────────────────────────────────
 function rand(min, max)    { return min + Math.random() * (max - min); }
 function pick(arr)         { return arr[Math.floor(Math.random() * arr.length)]; }
+function sleep(ms)         { return new Promise(r => setTimeout(r, ms)); }
 
 function haversineM(lat1, lng1, lat2, lng2) {
   const R = 6371000;
@@ -103,6 +106,30 @@ function jitter(lat, lng, maxM) {
     lat: lat + dLat * r * Math.cos(angle),
     lng: lng + dLng * r * Math.sin(angle),
   };
+}
+
+// ── Nominatim with Fibonacci retry ───────────────────────────────────────────
+// reverseGeocode() already enforces 1100ms between calls and uses the SQLite
+// cache, so the Fibonacci wrapper only kicks in on actual HTTP errors / 429.
+const FIB = (() => {
+  const seq = [1, 1];
+  while (seq.length < MAX_GEO_RETRIES) seq.push(seq.at(-1) + seq.at(-2));
+  return seq; // [1,1,2,3,5,8,13,21,34,55] seconds
+})();
+
+async function geocodeWithRetry(lat, lng) {
+  for (let attempt = 0; attempt < MAX_GEO_RETRIES; attempt++) {
+    try {
+      return await reverseGeocode(lat, lng);
+    } catch (err) {
+      const waitS = FIB[attempt];
+      process.stderr.write(
+        `\n[geo] tentativo ${attempt + 1}/${MAX_GEO_RETRIES} fallito (${err.message}) — attesa ${waitS}s...\n`
+      );
+      await sleep(waitS * 1000);
+    }
+  }
+  throw new Error(`[geo] Nominatim non disponibile dopo ${MAX_GEO_RETRIES} tentativi — aborto.`);
 }
 
 // ── random content pools ──────────────────────────────────────────────────────
@@ -180,6 +207,7 @@ const insertImg = db.prepare(`
   INSERT INTO images (
     id, status, file_path, thumbnail_path, medium_path, width, height,
     lat, lng, position_source,
+    paese, regione, provincia, comune,
     stage_ref, stage_distance_m, data_scatto,
     titolo, caption, ai_generated, autore_nome, email,
     verified_at, validated_at, validated_by,
@@ -188,7 +216,7 @@ const insertImg = db.prepare(`
     consenso, consenso_version, consenso_accepted_at,
     marketing_consent, created_at
   ) VALUES (
-    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
   )
 `);
 
@@ -223,6 +251,8 @@ async function main() {
       const createdAt  = isoOffset(rand(0, 30));
       const dataScatto = isoOffset(rand(0, 365)).slice(0, 10);
 
+      const geo = await geocodeWithRetry(pos.lat, pos.lng);
+
       const { paths, width, height } = await processImage(
         fs.readFileSync(fixture), trail.ref, id
       );
@@ -230,6 +260,7 @@ async function main() {
       insertImg.run(
         id, 'published', paths.original, paths.thumbnail, paths.medium, width, height,
         pos.lat, pos.lng, 'manual',
+        geo.paese, geo.regione, geo.provincia, geo.comune,
         trail.ref, distM, dataScatto,
         meta.titolo, meta.caption, 0, user.autore_nome, user.email,
         verifiedAt, createdAt, 'stress_test',
