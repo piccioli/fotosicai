@@ -37,6 +37,7 @@ export default function UploadPage() {
   const [photos, setPhotos] = useState([]);
   const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0);
   const [step, setStep] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
 
   const [autoreName, setAutoreName] = useState(() => localStorage.getItem('fotosicai_autore') || '');
   const [email, setEmail] = useState(() => localStorage.getItem('fotosicai_email') || '');
@@ -92,8 +93,7 @@ export default function UploadPage() {
     } catch {}
   }
 
-  function handleFileChange(e) {
-    const files = Array.from(e.target.files || []);
+  function processFiles(files) {
     if (!files.length) return;
     setError(null);
     const newPhotos = files.map(f => ({
@@ -116,6 +116,18 @@ export default function UploadPage() {
       return newPhotos;
     });
     newPhotos.forEach(p => parseExifAndGeo(p.id, p.file));
+  }
+
+  function handleFileChange(e) {
+    processFiles(Array.from(e.target.files || []));
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    setDragOver(false);
+    if (submitting) return;
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    processFiles(files);
   }
 
   function removePhoto(id) {
@@ -300,16 +312,41 @@ export default function UploadPage() {
       {step === 0 && (
         <div className="step-card">
           <h2>1. Seleziona le foto</h2>
-          <div className="field">
-            <label>Foto (JPEG, PNG, WEBP – max 50 MB per foto)</label>
-            <input ref={fileInputRef} type="file" accept="image/*" multiple disabled={submitting} onChange={handleFileChange} />
-          </div>
 
-          {photos.length === 0 && (
-            <p style={{ fontSize: 13, color: '#888', marginTop: 6 }}>
-              Puoi selezionare più foto contemporaneamente tenendo premuto Ctrl (o Cmd su Mac).
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            disabled={submitting}
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
+
+          <div
+            className={`file-drop-zone${dragOver ? ' file-drop-zone--over' : ''}`}
+            onClick={() => !submitting && fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); if (!submitting) setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+          >
+            <div className="file-drop-zone__icon">🖼️</div>
+            <p className="file-drop-zone__text">
+              {dragOver
+                ? 'Rilascia le foto qui'
+                : 'Trascina le foto qui oppure'}
             </p>
-          )}
+            {!dragOver && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ pointerEvents: 'none' }}
+              >
+                Sfoglia file…
+              </button>
+            )}
+            <p className="file-drop-zone__hint">JPEG, PNG, WEBP · max 50 MB per foto · più file contemporaneamente</p>
+          </div>
 
           {photos.length > 0 && (
             <div className="photo-thumb-grid">

@@ -217,6 +217,20 @@ button { cursor: pointer; }
 .photo-detail img { width: 100%; border-radius: 8px; margin-bottom: 20px; }
 .photo-detail h1 { font-size: 1.5rem; margin-bottom: 8px; }
 
+/* File drop zone (step 0) */
+.file-drop-zone {
+  border: 2px dashed #ccc; border-radius: 10px;
+  padding: 32px 20px; text-align: center; cursor: pointer;
+  transition: border-color .15s, background .15s;
+  background: #fafafa; margin-bottom: 4px; user-select: none;
+}
+.file-drop-zone:hover { border-color: #cc0000; background: #fff5f5; }
+.file-drop-zone--over { border-color: #cc0000; background: #fff0f0; }
+.file-drop-zone__icon { font-size: 36px; margin-bottom: 8px; }
+.file-drop-zone__text { font-size: 15px; color: #333; margin: 0 0 12px; }
+.file-drop-zone--over .file-drop-zone__text { font-size: 16px; font-weight: 600; color: #cc0000; }
+.file-drop-zone__hint { font-size: 12px; color: #999; margin: 10px 0 0; }
+
 /* Multi-photo upload grid (step 0 thumbnail selection) */
 .photo-thumb-grid {
   display: grid;
