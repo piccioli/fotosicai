@@ -224,11 +224,52 @@ const insertVerified = db.prepare(
   'INSERT OR IGNORE INTO verified_emails (email, verified_at) VALUES (?,?)'
 );
 
+function formatDuration(ms) {
+  if (!Number.isFinite(ms) || ms < 0) return '—';
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rs = s % 60;
+  if (m < 60) return `${m}m ${String(rs).padStart(2, '0')}s`;
+  const h = Math.floor(m / 60);
+  const rm = m % 60;
+  return `${h}h ${rm}m`;
+}
+
+/** Ora locale del processo (rispetta TZ se impostata, es. Europe/Rome sul server). */
+function formatEtaClock(date) {
+  return date.toLocaleTimeString('it-IT', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  });
+}
+
+/**
+ * Stima foto ancora da elaborare: resto utente corrente + utenti futuri × foto nominali.
+ * (Il jitter ±10% sui prossimi utenti non è noto → stima conservativa sul nominale.)
+ */
+function estimateRemainingPhotos(u, p, nPhotos) {
+  const leftThisUser = Math.max(0, nPhotos - (p + 1));
+  const futureUsers = Math.max(0, USERS - u - 1);
+  return leftThisUser + futureUsers * PHOTOS_PER_USER;
+}
+
+function writeEtaProgress(done, remainingPhotosEst, t0) {
+  if (done < 1) return;
+  const elapsed = Date.now() - t0;
+  const avgMs = elapsed / done;
+  const remainingMs = avgMs * remainingPhotosEst;
+  const eta = new Date(Date.now() + remainingMs);
+  const line = `\r\x1b[K[stress] ${done} fatte · ~${remainingPhotosEst} foto rimanenti (stima) · ~${formatDuration(remainingMs)} · fine stimata ~${formatEtaClock(eta)}`;
+  process.stderr.write(line);
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 async function main() {
   const t0 = Date.now();
+
   console.log(`\n🏔  FotoSICAI stress test — ${USERS} utenti × ~${PHOTOS_PER_USER} foto (±${JITTER * 100}%)`);
-  console.log(`    Buffer trail: ${TRAIL_BUFFER_M} m | Fixtures: ${fixtures.map(f => path.basename(f)).join(', ')}\n`);
+  console.log(`    Buffer trail: ${TRAIL_BUFFER_M} m | Fixtures: ${fixtures.map(f => path.basename(f)).join(', ')}`);
+  console.log(`    Durata/ora fine: stima su stderr dopo ogni foto (media sulle foto già elaborate).\n`);
 
   let totalPhotos = 0;
 
@@ -271,7 +312,9 @@ async function main() {
       );
       process.stdout.write('.');
       totalPhotos++;
+      writeEtaProgress(totalPhotos, estimateRemainingPhotos(u, p, nPhotos), t0);
     }
+    process.stderr.write('\n');
     console.log(' ✓');
   }
 
