@@ -59,6 +59,7 @@ export default function UploadPage() {
   const [error, setError] = useState(null);
   const [mapFullscreen, setMapFullscreen] = useState(false);
   const [publishedCount, setPublishedCount] = useState(0);
+  const [editingPhotoId, setEditingPhotoId] = useState(null);
 
   const cur = photos[currentPhotoIdx] ?? null;
   const withinThreshold = cur?.stage === undefined || cur?.stage === null || !!cur?.stage?.stage_ref;
@@ -686,6 +687,13 @@ export default function UploadPage() {
                   provincia={p.geoInfo?.provincia}
                   comune={p.geoInfo?.comune}
                 />
+                <button
+                  className="btn btn-secondary"
+                  style={{ marginTop: 12, fontSize: 13, padding: '7px 14px' }}
+                  onClick={() => setEditingPhotoId(p.id)}
+                >
+                  ✏️ Modifica
+                </button>
               </div>
             </div>
           ))}
@@ -743,6 +751,110 @@ export default function UploadPage() {
           </div>
         </div>
       )}
+
+      {editingPhotoId && (() => {
+        const ep = photos.find(ph => ph.id === editingPhotoId);
+        return ep ? (
+          <EditPhotoModal
+            photo={ep}
+            onConfirm={(updates) => { updatePhotoById(editingPhotoId, updates); setEditingPhotoId(null); }}
+            onClose={() => setEditingPhotoId(null)}
+          />
+        ) : null;
+      })()}
+    </div>
+  );
+}
+
+function EditPhotoModal({ photo, onConfirm, onClose }) {
+  const [position, setPosition] = useState(photo.position);
+  const [geoInfo, setGeoInfo] = useState(photo.geoInfo);
+  const [stage, setStage] = useState(photo.stage);
+  const [titolo, setTitolo] = useState(photo.titolo);
+  const [caption, setCaption] = useState(photo.caption);
+
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose(); }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  function handlePositionChange(pos) {
+    setPosition(pos);
+    setGeoInfo(null);
+    setStage(undefined);
+    fetch(`/api/geocode?lat=${pos.lat}&lng=${pos.lng}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(geo => { if (geo) setGeoInfo(geo); })
+      .catch(() => {});
+    fetch(`/api/stages/nearest?lat=${pos.lat}&lng=${pos.lng}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(s => setStage(s))
+      .catch(() => setStage(null));
+  }
+
+  const withinThreshold = stage === undefined || stage === null || !!stage?.stage_ref;
+
+  return (
+    <div className="edit-modal-overlay" onClick={onClose}>
+      <div className="edit-modal" onClick={e => e.stopPropagation()}>
+        <div className="edit-modal__header">
+          <h3 className="edit-modal__title">Modifica foto</h3>
+          <button className="edit-modal__close" onClick={onClose} aria-label="Chiudi">×</button>
+        </div>
+
+        <div className="edit-modal__body">
+          <img src={photo.previewUrl} alt={photo.titolo} className="edit-modal__thumb" />
+
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 8 }}>Posizione</p>
+          <div className="map-outer" style={{ marginBottom: 8 }}>
+            <LocationPicker
+              initialPosition={position || ITALY_CENTER}
+              onChange={handlePositionChange}
+              withinThreshold={withinThreshold}
+              fullscreen={false}
+            />
+          </div>
+          {position && (
+            <div style={{ marginBottom: 16 }}>
+              <PositionMeta position={position} geoInfo={geoInfo} stage={stage} />
+            </div>
+          )}
+
+          <div className="field">
+            <label>Titolo * <span style={{ color: '#888', fontWeight: 400 }}>(max 60 caratteri)</span></label>
+            <input
+              type="text"
+              value={titolo}
+              onChange={e => setTitolo(e.target.value)}
+              maxLength={60}
+              placeholder="Titolo della foto..."
+            />
+            <div className="hint">{titolo.length}/60</div>
+          </div>
+          <div className="field">
+            <label>Descrizione <span style={{ color: '#888', fontWeight: 400 }}>(max 280 caratteri)</span></label>
+            <textarea
+              value={caption}
+              onChange={e => setCaption(e.target.value)}
+              maxLength={280}
+              placeholder="Descrizione della foto..."
+            />
+            <div className="hint">{caption.length}/280</div>
+          </div>
+        </div>
+
+        <div className="edit-modal__footer">
+          <button className="btn btn-secondary" onClick={onClose}>Annulla</button>
+          <button
+            className="btn btn-primary"
+            disabled={!titolo.trim()}
+            onClick={() => onConfirm({ position, geoInfo, stage, titolo, caption })}
+          >
+            Conferma
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
