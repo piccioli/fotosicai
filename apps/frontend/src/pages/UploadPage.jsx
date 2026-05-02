@@ -60,14 +60,46 @@ export default function UploadPage() {
   const [mapFullscreen, setMapFullscreen] = useState(false);
   const [publishedCount, setPublishedCount] = useState(0);
   const [editingPhotoId, setEditingPhotoId] = useState(null);
+  const [aiEnriching, setAiEnriching] = useState(false);
+  const [aiProgress, setAiProgress] = useState('');
+  const [manualPhotoIds, setManualPhotoIds] = useState(() => new Set());
 
   const cur = photos[currentPhotoIdx] ?? null;
   const withinThreshold = cur?.stage === undefined || cur?.stage === null || !!cur?.stage?.stage_ref;
   const canProceedStep0 = photos.length > 0 && autoreName.trim().length > 0 && EMAIL_RE.test(email.trim());
   const canProceedStep1 = !!cur?.position && withinThreshold;
 
+  // Foto che richiedono posizione/titolo manuale (no GPS o fuori buffer SICAI)
+  const manualList = photos.filter(p => manualPhotoIds.has(p.id));
+  const currentManualIdx = cur ? manualList.findIndex(p => p.id === cur.id) : -1;
+
   function updatePhotoById(id, updates) {
     setPhotos(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+  }
+
+  // Foto che richiedono step manuali: senza GPS o con GPS fuori buffer SICAI
+  function needsManualSteps(p) {
+    return !p.exifGps || !p.stage?.stage_ref;
+  }
+
+  // Arricchimento AI automatico per una lista di foto (con schermata di loading)
+  async function runAIEnrichment(photosArr) {
+    const toEnrich = photosArr.filter(p => p.draft?.id && !p.titolo);
+    if (!toEnrich.length) return;
+    setAiEnriching(true);
+    for (let i = 0; i < toEnrich.length; i++) {
+      setAiProgress(`Arricchimento AI: foto ${i + 1} di ${toEnrich.length}…`);
+      const p = toEnrich[i];
+      updatePhotoById(p.id, { aiLoading: true, aiError: null });
+      try {
+        const r = await api.generateAI(p.draft.id);
+        updatePhotoById(p.id, { titolo: r.titolo || '', caption: r.caption || '', aiLoading: false });
+      } catch (e) {
+        updatePhotoById(p.id, { aiError: e.message, aiLoading: false });
+      }
+    }
+    setAiEnriching(false);
+    setAiProgress('');
   }
 
   async function parseExifAndGeo(photoId, file) {
@@ -144,44 +176,56 @@ export default function UploadPage() {
     setError(null);
 
     const needUpload = photos.filter(p => !p.draft);
-    if (needUpload.length === 0) {
-      setCurrentPhotoIdx(0);
-      setStep(1);
-      return;
+    let currentPhotos = photos;
+
+    if (needUpload.length > 0) {
+      setSubmitting(true);
+      try {
+        const results = await Promise.all(
+          needUpload.map(async p => {
+            const fd = new FormData();
+            fd.append('file', p.file);
+            fd.append('autore_nome', autoreName.trim() || 'Anonimo');
+            fd.append('email', email.trim().toLowerCase());
+            if (p.position) {
+              fd.append('lat', p.position.lat);
+              fd.append('lng', p.position.lng);
+            }
+            return { id: p.id, data: await api.upload(fd) };
+          })
+        );
+        const resultMap = new Map(results.map(r => [r.id, r.data]));
+        currentPhotos = photos.map(p => {
+          const data = resultMap.get(p.id);
+          if (!data) return p;
+          const position = p.position ?? (
+            data.suggested?.lat != null
+              ? { lat: data.suggested.lat, lng: data.suggested.lng }
+              : null
+          );
+          return { ...p, draft: data, position };
+        });
+        setPhotos(currentPhotos);
+      } catch (e) {
+        setError(e.message);
+        setSubmitting(false);
+        return;
+      }
+      setSubmitting(false);
     }
 
-    setSubmitting(true);
-    try {
-      const results = await Promise.all(
-        needUpload.map(async p => {
-          const fd = new FormData();
-          fd.append('file', p.file);
-          fd.append('autore_nome', autoreName.trim() || 'Anonimo');
-          fd.append('email', email.trim().toLowerCase());
-          if (p.position) {
-            fd.append('lat', p.position.lat);
-            fd.append('lng', p.position.lng);
-          }
-          return { id: p.id, data: await api.upload(fd) };
-        })
-      );
-      const resultMap = new Map(results.map(r => [r.id, r.data]));
-      setPhotos(prev => prev.map(p => {
-        const data = resultMap.get(p.id);
-        if (!data) return p;
-        const position = p.position ?? (
-          data.suggested?.lat != null
-            ? { lat: data.suggested.lat, lng: data.suggested.lng }
-            : null
-        );
-        return { ...p, draft: data, position };
-      }));
-      setCurrentPhotoIdx(0);
+    const manual = currentPhotos.filter(needsManualSteps);
+
+    if (manual.length === 0) {
+      // CASO 1: tutte le foto hanno GPS + buffer SICAI ok → arricchimento AI poi Riepilogo
+      setManualPhotoIds(new Set());
+      await runAIEnrichment(currentPhotos);
+      setStep(3);
+    } else {
+      // CASO 2: alcune foto richiedono revisione manuale
+      setManualPhotoIds(new Set(manual.map(p => p.id)));
+      setCurrentPhotoIdx(currentPhotos.findIndex(needsManualSteps));
       setStep(1);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setSubmitting(false);
     }
   }
 
@@ -301,7 +345,7 @@ export default function UploadPage() {
   return (
     <div className="upload-page">
       <h1>Carica foto</h1>
-      <StepIndicator current={step} steps={STEPS} />
+      <StepIndicator current={aiEnriching ? 3 : step} steps={STEPS} />
 
       {error && (
         <div style={{ background: '#fce8e8', border: '1px solid #e00', padding: '10px 14px', borderRadius: 6, marginBottom: 16, fontSize: 13, color: '#a00' }}>
@@ -309,8 +353,20 @@ export default function UploadPage() {
         </div>
       )}
 
+      {/* Schermata intermedia arricchimento AI */}
+      {aiEnriching && (
+        <div className="step-card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <div className="ai-loading-spinner" style={{ margin: '0 auto 20px' }} />
+          <h3 style={{ marginBottom: 8 }}>Arricchimento AI in corso…</h3>
+          <p className="ai-loading-label" style={{ marginBottom: 6 }}>{aiProgress}</p>
+          <p style={{ fontSize: 13, color: '#666' }}>
+            Generazione automatica di titolo e descrizione per le foto con GPS sul Sentiero Italia.
+          </p>
+        </div>
+      )}
+
       {/* STEP 0 — File selection */}
-      {step === 0 && (
+      {!aiEnriching && step === 0 && (
         <div className="step-card">
           <h2>1. Seleziona le foto</h2>
 
@@ -498,14 +554,18 @@ export default function UploadPage() {
       )}
 
       {/* STEP 1 — Position */}
-      {step === 1 && cur && (
+      {!aiEnriching && step === 1 && cur && (
         <div className="step-card">
           <h2>2. Posizione della foto</h2>
 
-          {photos.length > 1 && (
+          {(manualList.length > 1 || photos.length > 1) && (
             <div className="photo-progress-badge">
               <img src={cur.previewUrl} alt="" />
-              <span className="tag">Foto {currentPhotoIdx + 1} di {photos.length}: {cur.file.name}</span>
+              <span className="tag">
+                {manualList.length > 0
+                  ? `Da completare: ${currentManualIdx + 1} di ${manualList.length}${manualList.length < photos.length ? ` (${photos.length} totali)` : ''} — ${cur.file.name}`
+                  : `Foto ${currentPhotoIdx + 1} di ${photos.length}: ${cur.file.name}`}
+              </span>
             </div>
           )}
 
@@ -542,8 +602,8 @@ export default function UploadPage() {
                 <div className="btn-row" style={{ margin: 0, flexShrink: 0 }}>
                   <button className="btn btn-secondary" onClick={() => {
                     setMapFullscreen(false);
-                    if (currentPhotoIdx === 0) setStep(0);
-                    else { setCurrentPhotoIdx(i => i - 1); setStep(2); }
+                    if (currentManualIdx <= 0) setStep(0);
+                    else { setCurrentPhotoIdx(photos.indexOf(manualList[currentManualIdx - 1])); setStep(2); }
                   }}>Indietro</button>
                   <button className="btn btn-primary" disabled={!canProceedStep1} onClick={() => { setMapFullscreen(false); setStep(2); }}>
                     Avanti
@@ -562,8 +622,8 @@ export default function UploadPage() {
               )}
               <div className="btn-row">
                 <button className="btn btn-secondary" onClick={() => {
-                  if (currentPhotoIdx === 0) setStep(0);
-                  else { setCurrentPhotoIdx(i => i - 1); setStep(2); }
+                  if (currentManualIdx <= 0) setStep(0);
+                  else { setCurrentPhotoIdx(photos.indexOf(manualList[currentManualIdx - 1])); setStep(2); }
                 }}>Indietro</button>
                 <button className="btn btn-primary" disabled={!canProceedStep1} onClick={() => setStep(2)}>
                   Avanti
@@ -575,14 +635,18 @@ export default function UploadPage() {
       )}
 
       {/* STEP 2 — Title & AI */}
-      {step === 2 && cur && (
+      {!aiEnriching && step === 2 && cur && (
         <div className="step-card">
           <h2>3. Titolo e descrizione</h2>
 
-          {photos.length > 1 && (
+          {(manualList.length > 1 || photos.length > 1) && (
             <div className="photo-progress-badge">
               <img src={cur.previewUrl} alt="" />
-              <span className="tag">Foto {currentPhotoIdx + 1} di {photos.length}: {cur.file.name}</span>
+              <span className="tag">
+                {manualList.length > 0
+                  ? `Da completare: ${currentManualIdx + 1} di ${manualList.length}${manualList.length < photos.length ? ` (${photos.length} totali)` : ''} — ${cur.file.name}`
+                  : `Foto ${currentPhotoIdx + 1} di ${photos.length}: ${cur.file.name}`}
+              </span>
             </div>
           )}
 
@@ -646,17 +710,21 @@ export default function UploadPage() {
                 <button
                   className="btn btn-primary"
                   disabled={!cur.titolo.trim()}
-                  onClick={() => {
-                    if (currentPhotoIdx + 1 < photos.length) {
-                      setCurrentPhotoIdx(i => i + 1);
+                  onClick={async () => {
+                    const next = manualList[currentManualIdx + 1];
+                    if (next) {
+                      setCurrentPhotoIdx(photos.indexOf(next));
                       setStep(1);
                     } else {
+                      // Tutte le foto manuali completate → arricchimento AI per le foto auto
+                      const autoList = photos.filter(p => !manualPhotoIds.has(p.id));
+                      await runAIEnrichment(autoList);
                       setStep(3);
                     }
                   }}
                 >
-                  {currentPhotoIdx + 1 < photos.length
-                    ? `Avanti → foto ${currentPhotoIdx + 2}`
+                  {manualList[currentManualIdx + 1]
+                    ? `Avanti → foto ${currentManualIdx + 2} di ${manualList.length}`
                     : 'Avanti'}
                 </button>
               </div>
@@ -666,9 +734,12 @@ export default function UploadPage() {
       )}
 
       {/* STEP 3 — Summary */}
-      {step === 3 && (
+      {!aiEnriching && step === 3 && (
         <div className="step-card">
           <h2>4. Riepilogo</h2>
+          <p style={{ fontSize: 13, color: '#555', marginBottom: 16 }}>
+            Controlla i dati delle tue foto. Puoi modificare posizione, titolo e descrizione cliccando su <strong>✏️ Modifica</strong>.
+          </p>
 
           {photos.length > 1 && (
             <div style={{ marginBottom: 16, padding: '12px', background: '#f5f7fa', borderRadius: 6 }}>
@@ -716,8 +787,15 @@ export default function UploadPage() {
 
           <div className="btn-row" style={{ marginTop: 20 }}>
             <button className="btn btn-secondary" onClick={() => {
-              setCurrentPhotoIdx(photos.length - 1);
-              setStep(2);
+              if (manualPhotoIds.size === 0) {
+                // CASO 1: non c'erano foto manuali, torna alla selezione file
+                setStep(0);
+              } else {
+                // CASO 2: torna all'ultima foto manuale (step 2)
+                const lastManual = manualList[manualList.length - 1];
+                setCurrentPhotoIdx(photos.indexOf(lastManual));
+                setStep(2);
+              }
             }}>Indietro</button>
             <button className="btn btn-primary" onClick={() => setStep(4)}>Avanti</button>
           </div>
@@ -725,7 +803,7 @@ export default function UploadPage() {
       )}
 
       {/* STEP 4 — Consent + Publish */}
-      {step === 4 && (
+      {!aiEnriching && step === 4 && (
         <div className="step-card">
           <h2>5. Accetta e pubblica</h2>
           {consent ? (
