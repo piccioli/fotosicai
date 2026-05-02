@@ -1,8 +1,8 @@
 # PROGRESS
 
-# TODO
-
 - [ ] Aggiungere documentazione .md e PDF anche per DPO CAI + email da mandare a resp. CAI (su carta intestata Montagna Servizi / SICAI)
+
+# TODO
 
 ====== GOLIVE DOPO ACCETTAZIONE CAI ========
 
