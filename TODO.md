@@ -1,22 +1,23 @@
+- [X] Revisione helper dei campi in funzione CAI, specificare meglio perché indirizzo email
 
-# TODO
+- [X] Controllare meccanismo di salvataggio dei dati (flag acceso/spento)
 
-- [ ] Revisione helper dei campi in funzione CAI, specificare meglio perché indirizzo email
+- [X] Migliorare flag consenso: uno obbligatorio con tutto quello che si deve accettare, uno facoltativo che autorizza MontagnaServizi a ricontattare l'utente per comunicazioni che riguardano il SICAI (da mettere solo se utente non è presente nel DB).
+
+- [X] Email: Migliorare il testo della email ricevuta facendo riferimento all'incarico di Montagna Servizi per SICAI, Aggiungere tutti i dati che ha selezionato utente nello step 1., nel popup di verifica della email metti due bottoni "Carica nuove foto" "Chiudi". Backend: in users aggiungere campo consenso email
+
+- [X] Backend: users/ aggiungere campo data di convalida email
+
+- [X] Backend: users/ aggiungere flag consenso e flag conseso ad essere ricontattati
+
+- [X] Backend: users/ aggiungere funzionalità per scaricare XLS di tutti gli utenti presenti
 
 # PROGRESS
 
 
-- [ ] Migliorare flag consenso: uno obbligatorio con tutto quello che si deve accettare, uno facoltativo che autorizza MontagnaServizi a ricontattare l'utente per comunicazioni che riguardano il SICAI
+# TODO
 
-- [ ] Migliorare il testo della email ricevuta facendo riferimento all'incarico di Montagna Servizi per SICAI
-
-- [ ] Backend: users/ aggiungere campo data di convalida email
-
-- [ ] Backend: users/ aggiungere flag consenso e flag conseso ad essere ricontattati
-
-- [ ] Backend: users/ aggiungere funzionalità per scaricare XLS di tutti gli utenti presenti
-
-- [ ] Upload multiplo: funzionalità per caricare più foto contemporaneamente
+- [ ] Upload multiplo: implementare funzionalità per caricare più foto contemporaneamente. Nello Step 1. deve essere possibile selezionare più foto contemporaneamente che vengono mostrate come thubnail (anche una sola), nel caso in cui le foto selezionate siano più di una: lo step 2 e 3 deve essere ripetuto per ciascuna foto, nel riepilogo si devono mostrare tutte le foto selezionate con unico tasto publica.
 
 - [ ] Stress test: script stress_test che aggiunge X user e Y +/- 10% (random) foto per user sparse in un buffer di 500 m del SICAI in tutta italia, l'immagine la prende da fixtures, email e altri dati te li devi inventare, i dati aggiuntivi della immagine (titolo + descrizione) inventali random senza chiamare AI
 

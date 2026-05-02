@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.4.0 - 2026-05-02
+
+### Added
+- Admin users export to Excel (`GET /api/admin/users/export`) with download button in the admin UI.
+- Admin users list includes email verification timestamp when available.
+
+### Changed
+- Verification emails include a richer summary of profile/consent selections aligned with the upload flow.
+
 ## v1.3.1 - 2026-05-01
 
 ### Fixed

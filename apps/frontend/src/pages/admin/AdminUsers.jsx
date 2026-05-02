@@ -6,20 +6,42 @@ function fmt(iso) {
   return new Date(iso).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
 }
 
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('it-IT', { dateStyle: 'short' });
+}
+
 export default function AdminUsers() {
   const [users, setUsers] = useState(null);
   const [error, setError] = useState('');
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     adminApi.users().then(setUsers).catch((e) => setError(e.message));
   }, []);
+
+  async function handleExport() {
+    setDownloading(true);
+    try {
+      await adminApi.exportUsers();
+    } catch (e) {
+      alert(`Errore durante l'export: ${e.message}`);
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   if (error) return <div className="admin-alert admin-alert--error">{error}</div>;
   if (!users) return <div className="admin-loading">Caricamento utenti…</div>;
 
   return (
     <div>
-      <h2 className="admin-page-title">Utenti ({users.length})</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
+        <h2 className="admin-page-title" style={{ margin: 0 }}>Utenti ({users.length})</h2>
+        <button className="admin-btn admin-btn--success" onClick={handleExport} disabled={downloading}>
+          {downloading ? '…' : '⬇ Scarica XLS'}
+        </button>
+      </div>
       {users.length === 0
         ? <p className="admin-empty">Nessun autore registrato.</p>
         : (
@@ -36,6 +58,7 @@ export default function AdminUsers() {
                   <th>Tappa / Regione</th>
                   <th>Foto</th>
                   <th>Email verif.</th>
+                  <th>Data verifica</th>
                   <th>Consenso</th>
                   <th>Ricontatto</th>
                   <th>Ultima upload</th>
@@ -65,6 +88,7 @@ export default function AdminUsers() {
                         ? <span className="admin-badge admin-badge--ok">Sì</span>
                         : <span className="admin-badge admin-badge--warn">No</span>}
                     </td>
+                    <td style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{fmtDate(u.verified_at)}</td>
                     <td style={{ textAlign: 'center' }}>
                       {u.consenso
                         ? <span className="admin-badge admin-badge--ok">Sì</span>

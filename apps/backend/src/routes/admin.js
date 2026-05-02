@@ -1,5 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
+const XLSX = require('xlsx');
 const router = express.Router();
 const { getDb } = require('../db/index');
 const { requireAdmin, signSessionToken } = require('../middleware/auth');
@@ -83,6 +84,7 @@ router.get('/users', requireAdmin, (req, res) => {
       MAX(i.consenso) AS consenso,
       COUNT(*) AS photo_count,
       CASE WHEN EXISTS(SELECT 1 FROM verified_emails ve WHERE ve.email = LOWER(i.email)) THEN 1 ELSE 0 END AS verified,
+      (SELECT ve.verified_at FROM verified_emails ve WHERE ve.email = LOWER(i.email)) AS verified_at,
       MIN(i.created_at) AS first_upload_at,
       MAX(i.created_at) AS last_upload_at
     FROM images i
@@ -98,6 +100,59 @@ router.get('/users', requireAdmin, (req, res) => {
     marketing_consent: r.marketing_consent === 1,
     consenso: r.consenso === 1,
   })));
+});
+
+// GET /api/admin/users/export — scarica XLS di tutti gli utenti
+router.get('/users/export', requireAdmin, (req, res) => {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT
+      LOWER(i.email) AS email,
+      (SELECT i2.autore_nome FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) AS autore_nome,
+      CASE WHEN (SELECT i2.socio_cai FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) = 1 THEN 'Sì' ELSE 'No' END AS socio_cai,
+      (SELECT i2.sezione_cai FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) AS sezione_cai,
+      (SELECT i2.ruolo_cai FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) AS ruolo_cai,
+      CASE WHEN (SELECT i2.referente_sicai FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) = 1 THEN 'Sì' ELSE 'No' END AS referente_sicai,
+      (SELECT i2.referente_sicai_ambito FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) AS referente_sicai_ambito,
+      COUNT(*) AS foto_caricate,
+      CASE WHEN EXISTS(SELECT 1 FROM verified_emails ve WHERE ve.email = LOWER(i.email)) THEN 'Sì' ELSE 'No' END AS email_verificata,
+      (SELECT ve.verified_at FROM verified_emails ve WHERE ve.email = LOWER(i.email)) AS data_verifica_email,
+      CASE WHEN MAX(i.consenso) = 1 THEN 'Sì' ELSE 'No' END AS consenso_accettato,
+      CASE WHEN MAX(i.marketing_consent) = 1 THEN 'Sì' ELSE 'No' END AS consenso_ricontatto,
+      MIN(i.created_at) AS prima_upload,
+      MAX(i.created_at) AS ultima_upload
+    FROM images i
+    WHERE i.email <> ''
+    GROUP BY LOWER(i.email)
+    ORDER BY ultima_upload DESC
+  `).all();
+
+  const headers = [
+    'Email', 'Nome autore', 'Socio CAI', 'Sezione CAI', 'Ruolo/Titolo',
+    'Referente SICAI', 'Tappa/Regione SICAI', 'Foto caricate',
+    'Email verificata', 'Data verifica email',
+    'Consenso pubblicazione', 'Consenso ricontatto',
+    'Prima upload', 'Ultima upload',
+  ];
+
+  const data = rows.map((r) => [
+    r.email, r.autore_nome || '', r.socio_cai, r.sezione_cai || '', r.ruolo_cai || '',
+    r.referente_sicai, r.referente_sicai_ambito || '', r.foto_caricate,
+    r.email_verificata, r.data_verifica_email || '',
+    r.consenso_accettato, r.consenso_ricontatto,
+    r.prima_upload || '', r.ultima_upload || '',
+  ]);
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+  ws['!cols'] = headers.map(() => ({ wch: 24 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Utenti');
+
+  const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  const filename = `fotosicai-utenti-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(buf);
 });
 
 // GET /api/admin/facets — valori distinti per i filtri (tutte le foto, non solo published)

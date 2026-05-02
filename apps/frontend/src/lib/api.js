@@ -71,6 +71,21 @@ export const adminApi = {
 
   users: () => adminRequest('/users'),
 
+  exportUsers: async () => {
+    const token = localStorage.getItem('fotosicai_admin_token') || '';
+    const res = await fetch('/api/admin/users/export', { headers: { Authorization: `Bearer ${token}` } });
+    if (res.status === 401) { localStorage.removeItem('fotosicai_admin_token'); window.location.replace('/admin/login'); return; }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="([^"]+)"/);
+    const filename = match ? match[1] : 'fotosicai-utenti.xlsx';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  },
+
   facets: () => adminRequest('/facets'),
 
   images: ({ status, validated, q, email, stage_ref, regione, page } = {}) => {
