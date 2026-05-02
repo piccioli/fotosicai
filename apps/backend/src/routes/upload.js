@@ -30,6 +30,12 @@ router.post('/', upload.single('file'), async (req, res, next) => {
       return res.status(400).json({ error: 'email è obbligatoria e deve essere valida' });
     }
 
+    const db = getDb();
+    const isReturning = !!(
+      db.prepare('SELECT 1 FROM images WHERE LOWER(email) = LOWER(?) LIMIT 1').get(email) ||
+      db.prepare('SELECT 1 FROM verified_emails WHERE email = ? LIMIT 1').get(email)
+    );
+
     const id = uuidv4();
     const buffer = req.file.buffer;
 
@@ -65,7 +71,6 @@ router.post('/', upload.single('file'), async (req, res, next) => {
     // Process images (original + medium + thumb)
     const { paths, width, height } = await processImage(buffer, stageInfo.stage_ref, id);
 
-    const db = getDb();
     db.prepare(
       `INSERT INTO images (id, status, file_path, thumbnail_path, medium_path, width, height,
         lat, lng, position_source, paese, regione, provincia, comune,
@@ -83,6 +88,7 @@ router.post('/', upload.single('file'), async (req, res, next) => {
 
     res.json({
       id,
+      is_returning: isReturning,
       exif: { gps: exifGps, datetime: exifDatetime },
       suggested: {
         lat,
@@ -130,7 +136,9 @@ router.post('/:id/ai', async (req, res, next) => {
 // POST /api/upload/:id/finalize — pubblica la foto (con verifica email)
 router.post('/:id/finalize', async (req, res, next) => {
   try {
-    const { titolo, caption, autore_nome, lat, lng, consenso_version, consenso_accepted } = req.body;
+    const { titolo, caption, autore_nome, lat, lng, consenso_version, consenso_accepted,
+            socio_cai, sezione_cai, ruolo_cai, referente_sicai, referente_sicai_ambito,
+            marketing_consent } = req.body;
 
     if (!consenso_accepted) return res.status(400).json({ error: 'Consenso obbligatorio' });
     if (!titolo || !titolo.trim()) return res.status(400).json({ error: 'Titolo obbligatorio' });
@@ -162,6 +170,13 @@ router.post('/:id/finalize', async (req, res, next) => {
     const consentVer = consenso_version || process.env.CONSENT_VERSION || '';
     const aiGenerated = req.body.ai_generated === false ? 0 : 1;
 
+    const finalSocioCai = socio_cai ? 1 : 0;
+    const finalSezioneCai = finalSocioCai ? (sezione_cai || '').trim().slice(0, 120) || null : null;
+    const finalRuoloCai = (ruolo_cai || '').trim().slice(0, 100) || null;
+    const finalReferenteSicai = referente_sicai ? 1 : 0;
+    const finalReferenteSicaiAmbito = finalReferenteSicai ? (referente_sicai_ambito || '').trim().slice(0, 100) || null : null;
+    const finalMarketingConsent = marketing_consent ? 1 : 0;
+
     const email = img.email;
 
     // Check trust cache: email verified within the trust window → publish directly
@@ -173,21 +188,30 @@ router.post('/:id/finalize', async (req, res, next) => {
     if (trusted) {
       db.prepare(
         `UPDATE images SET
-          status = 'published', verified_at = ?,
+          status = 'published',
+          verified_at = ?,
+          validated_at = NULL,
+          validated_by = NULL,
           titolo = ?, caption = ?,
           autore_nome = ?,
           lat = ?, lng = ?,
           paese = ?, regione = ?, provincia = ?, comune = ?,
           stage_id = ?, stage_ref = ?, stage_distance_m = ?,
           ai_generated = ?,
-          consenso = 1, consenso_version = ?, consenso_accepted_at = ?
+          socio_cai = ?, sezione_cai = ?, ruolo_cai = ?,
+          referente_sicai = ?, referente_sicai_ambito = ?,
+          consenso = 1, consenso_version = ?, consenso_accepted_at = ?,
+          marketing_consent = ?
          WHERE id = ?`
       ).run(
         now, finalTitolo, finalCaption, finalAutore,
         finalLat, finalLng,
         geoInfo.paese ?? null, geoInfo.regione ?? null, geoInfo.provincia ?? null, geoInfo.comune ?? null,
         stageInfo.stage_id, stageInfo.stage_ref, stageInfo.distance_m,
-        aiGenerated, consentVer, now, img.id
+        aiGenerated,
+        finalSocioCai, finalSezioneCai, finalRuoloCai,
+        finalReferenteSicai, finalReferenteSicaiAmbito,
+        consentVer, now, finalMarketingConsent, img.id
       );
 
       const PUBLIC_BASE = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -198,7 +222,54 @@ router.post('/:id/finalize', async (req, res, next) => {
       });
     }
 
-    // No trust cache hit — set pending_verification and send confirmation email
+    // No trust cache hit — check if a pending_verification already exists for this email
+    const alreadyPending = db
+      .prepare("SELECT COUNT(*) AS n FROM images WHERE LOWER(email) = LOWER(?) AND status = 'pending_verification'")
+      .get(email).n;
+
+    if (alreadyPending > 0) {
+      // Another photo is already waiting for email verification: save this one too but skip the email.
+      const leadSentAtRow = db.prepare(`
+        SELECT verification_sent_at AS sent_at
+        FROM images
+        WHERE LOWER(email) = LOWER(?) AND status = 'pending_verification'
+        ORDER BY CASE WHEN verification_token IS NOT NULL THEN 0 ELSE 1 END,
+                 datetime(verification_sent_at) ASC,
+                 datetime(created_at) ASC
+        LIMIT 1
+      `).get(email);
+      const sentAtForQueue = leadSentAtRow?.sent_at || now;
+
+      db.prepare(
+        `UPDATE images SET
+          status = 'pending_verification',
+          verification_token = NULL, verification_sent_at = ?,
+          titolo = ?, caption = ?,
+          autore_nome = ?,
+          lat = ?, lng = ?,
+          paese = ?, regione = ?, provincia = ?, comune = ?,
+          stage_id = ?, stage_ref = ?, stage_distance_m = ?,
+          ai_generated = ?,
+          socio_cai = ?, sezione_cai = ?, ruolo_cai = ?,
+          referente_sicai = ?, referente_sicai_ambito = ?,
+          consenso = 1, consenso_version = ?, consenso_accepted_at = ?,
+          marketing_consent = ?
+         WHERE id = ?`
+      ).run(
+        sentAtForQueue,
+        finalTitolo, finalCaption, finalAutore,
+        finalLat, finalLng,
+        geoInfo.paese ?? null, geoInfo.regione ?? null, geoInfo.provincia ?? null, geoInfo.comune ?? null,
+        stageInfo.stage_id, stageInfo.stage_ref, stageInfo.distance_m,
+        aiGenerated,
+        finalSocioCai, finalSezioneCai, finalRuoloCai,
+        finalReferenteSicai, finalReferenteSicaiAmbito,
+        consentVer, now, finalMarketingConsent, img.id
+      );
+      return res.json({ pending: true, id: img.id, email, email_sent: false });
+    }
+
+    // First pending photo for this email — create token and send verification email
     const token = crypto.randomBytes(32).toString('hex');
 
     db.prepare(
@@ -211,7 +282,10 @@ router.post('/:id/finalize', async (req, res, next) => {
         paese = ?, regione = ?, provincia = ?, comune = ?,
         stage_id = ?, stage_ref = ?, stage_distance_m = ?,
         ai_generated = ?,
-        consenso = 1, consenso_version = ?, consenso_accepted_at = ?
+        socio_cai = ?, sezione_cai = ?, ruolo_cai = ?,
+        referente_sicai = ?, referente_sicai_ambito = ?,
+        consenso = 1, consenso_version = ?, consenso_accepted_at = ?,
+        marketing_consent = ?
        WHERE id = ?`
     ).run(
       token, now,
@@ -219,11 +293,23 @@ router.post('/:id/finalize', async (req, res, next) => {
       finalLat, finalLng,
       geoInfo.paese ?? null, geoInfo.regione ?? null, geoInfo.provincia ?? null, geoInfo.comune ?? null,
       stageInfo.stage_id, stageInfo.stage_ref, stageInfo.distance_m,
-      aiGenerated, consentVer, now, img.id
+      aiGenerated,
+      finalSocioCai, finalSezioneCai, finalRuoloCai,
+      finalReferenteSicai, finalReferenteSicaiAmbito,
+      consentVer, now, finalMarketingConsent, img.id
     );
 
     try {
-      await sendVerificationEmail({ to: email, photoId: img.id, token, titolo: finalTitolo });
+      await sendVerificationEmail({
+        to: email, token,
+        autoreNome: finalAutore,
+        socioCai: finalSocioCai === 1,
+        sezioneCai: finalSezioneCai,
+        ruoloCai: finalRuoloCai,
+        referenteSicai: finalReferenteSicai === 1,
+        referenteSicaiAmbito: finalReferenteSicaiAmbito,
+        marketingConsent: finalMarketingConsent === 1,
+      });
     } catch (mailErr) {
       // Keep data coherent: if the email cannot be sent, avoid leaving the photo stuck in pending state.
       db.prepare(
@@ -251,7 +337,7 @@ router.post('/:id/finalize', async (req, res, next) => {
       return next(err);
     }
 
-    res.json({ pending: true, id: img.id, email });
+    res.json({ pending: true, id: img.id, email, email_sent: true });
   } catch (err) {
     next(err);
   }

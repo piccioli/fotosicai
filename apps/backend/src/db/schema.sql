@@ -25,9 +25,17 @@ CREATE TABLE IF NOT EXISTS images (
   verification_token   TEXT,
   verification_sent_at TEXT,
   verified_at          TEXT,
+  validated_at         TEXT,
+  validated_by         TEXT,
+  socio_cai            INTEGER NOT NULL DEFAULT 0,
+  sezione_cai          TEXT,
+  ruolo_cai            TEXT,
+  referente_sicai      INTEGER NOT NULL DEFAULT 0,
+  referente_sicai_ambito TEXT,
   consenso             INTEGER NOT NULL DEFAULT 0,
   consenso_version     TEXT NOT NULL DEFAULT '',
   consenso_accepted_at TEXT NOT NULL DEFAULT '',
+  marketing_consent    INTEGER NOT NULL DEFAULT 0,
   created_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

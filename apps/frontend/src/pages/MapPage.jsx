@@ -8,17 +8,59 @@ const SICAI_TRACK_BASE = import.meta.env.VITE_SICAI_TRACK_BASE_URL || 'https://s
 const TILE_URL = import.meta.env.VITE_TILE_URL || 'https://api.webmapp.it/tiles/{z}/{x}/{y}.png';
 const TILE_ATTR = import.meta.env.VITE_TILE_ATTRIBUTION || '&copy; CAI &copy; OpenStreetMap';
 const GEOJSON_URL = '/DATA/data.geojson';
-const MARKER_ZOOM = 12;
 const ITALY_CENTER = [42.5, 12.5];
 const ITALY_ZOOM = 6;
+
+function EmailVerifiedModal({ onClose }) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose(); }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div className="info-overlay" onClick={onClose}>
+      <div className="info-popup" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420, textAlign: 'center' }}>
+        <button className="info-popup__close" onClick={onClose} aria-label="Chiudi">×</button>
+        <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+        <h2 style={{ fontSize: '1.15rem', marginBottom: 10 }}>Email verificata!</h2>
+        <p style={{ fontSize: 14, color: '#333', lineHeight: 1.6, marginBottom: 10 }}>
+          Grazie per aver confermato la tua email.
+        </p>
+        <p style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 10 }}>
+          Le tue foto sono ora in attesa di approvazione da parte del <strong>team SICAI</strong>.
+          Non appena approvate, saranno visibili sulla mappa e nell'archivio pubblico.
+        </p>
+        <p style={{ fontSize: 13, color: '#888', lineHeight: 1.6, marginBottom: 20 }}>
+          Grazie per il tuo contributo al Sentiero Italia!
+        </p>
+        <div className="btn-row" style={{ justifyContent: 'center' }}>
+          <button className="btn btn-primary" onClick={() => { onClose(); navigate('/upload'); }}>
+            Carica nuove foto
+          </button>
+          <button className="btn btn-secondary" onClick={onClose}>
+            Chiudi
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function MapPage() {
   const mapRef = useRef(null);
   const leafletMap = useRef(null);
   const clusterGroup = useRef(null);
-  const [showZoomHint, setShowZoomHint] = useState(true);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [showVerifiedModal, setShowVerifiedModal] = useState(() => searchParams.get('email_verified') === '1');
+
+  function closeVerifiedModal() {
+    setShowVerifiedModal(false);
+    navigate('/', { replace: true });
+  }
 
   useEffect(() => {
     if (leafletMap.current) return;
@@ -44,10 +86,6 @@ export default function MapPage() {
     const cluster = L.markerClusterGroup({ maxClusterRadius: 60, disableClusteringAtZoom: 16 });
     clusterGroup.current = cluster;
     map.addLayer(cluster);
-
-    const updateZoomHint = () => setShowZoomHint(map.getZoom() < MARKER_ZOOM);
-    map.on('zoomend', updateZoomHint);
-    updateZoomHint();
 
     loadMarkers(map, cluster);
 
@@ -77,7 +115,7 @@ export default function MapPage() {
 
     const marker = L.marker([img.lat, img.lng], { icon });
     marker.on('click', () => {
-      const popup = L.popup({ maxWidth: 260 })
+      L.popup({ maxWidth: 260 })
         .setLatLng([img.lat, img.lng])
         .setContent(buildPopupHtml(img))
         .openOn(map);
@@ -120,10 +158,8 @@ export default function MapPage() {
   return (
     <div className="map-wrap">
       <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
-      {showZoomHint && (
-        <div className="map-zoom-hint">Ingrandisci la mappa per vedere le foto</div>
-      )}
       <style>{`.thumb-marker{width:44px;height:44px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);background-size:cover;background-position:center;}`}</style>
+      {showVerifiedModal && <EmailVerifiedModal onClose={closeVerifiedModal} />}
     </div>
   );
 }

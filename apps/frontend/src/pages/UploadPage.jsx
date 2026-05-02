@@ -5,6 +5,7 @@ import { api } from '../lib/api.js';
 import LocationPicker from '../components/LocationPicker.jsx';
 import ConsentText from '../components/ConsentText.jsx';
 import PhotoMeta from '../components/PhotoMeta.jsx';
+import { CAI_SEZIONI } from '../lib/caiSezioni.js';
 
 function IconExpand() {
   return (
@@ -40,9 +41,13 @@ export default function UploadPage() {
   const [exifGeoInfo, setExifGeoInfo] = useState(null); // {regione, provincia, comune}
   const [exifStage, setExifStage] = useState(undefined); // {stage_ref, distance_m} | null | undefined(loading)
   const [autoreName, setAutoreName] = useState(() => localStorage.getItem('fotosicai_autore') || '');
-  const [rememberName, setRememberName] = useState(() => !!localStorage.getItem('fotosicai_autore'));
   const [email, setEmail] = useState(() => localStorage.getItem('fotosicai_email') || '');
-  const [rememberEmail, setRememberEmail] = useState(() => !!localStorage.getItem('fotosicai_email'));
+  const [rememberData, setRememberData] = useState(() => !!(localStorage.getItem('fotosicai_autore') || localStorage.getItem('fotosicai_email')));
+  const [socioCai, setSocioCai] = useState(() => localStorage.getItem('fotosicai_socio') === '1');
+  const [sezioneCai, setSezioneCai] = useState(() => localStorage.getItem('fotosicai_sezione') || '');
+  const [ruoloCai, setRuoloCai] = useState(() => localStorage.getItem('fotosicai_ruolo') || '');
+  const [referenteSicai, setReferenteSicai] = useState(() => localStorage.getItem('fotosicai_referente') === '1');
+  const [referenteSicaiAmbito, setReferenteSicaiAmbito] = useState(() => localStorage.getItem('fotosicai_referente_ambito') || '');
   const [position, setPosition] = useState(null); // {lat, lng}
   const [draft, setDraft] = useState(null); // response from POST /api/upload
   const [titolo, setTitolo] = useState('');
@@ -50,18 +55,13 @@ export default function UploadPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [consent, setConsent] = useState(null); // {version, markdown}
-  const [consentChecks, setConsentChecks] = useState({
-    readDocument: false,
-    acceptLicense: false,
-    rightsDeclaration: false,
-  });
+  const [consentAccepted, setConsentAccepted] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [mapFullscreen, setMapFullscreen] = useState(false);
-  const allConsentAccepted =
-    consentChecks.readDocument &&
-    consentChecks.acceptLicense &&
-    consentChecks.rightsDeclaration;
+  const [published, setPublished] = useState(false);
+  const allConsentAccepted = consentAccepted;
 
   // Step 0: pick file
   async function handleFileChange(e) {
@@ -166,11 +166,17 @@ export default function UploadPage() {
         consenso_version: consent?.version || '',
         consenso_accepted: true,
         ai_generated: !aiError && !!titolo,
+        socio_cai: socioCai,
+        sezione_cai: socioCai ? sezioneCai : '',
+        ruolo_cai: ruoloCai,
+        referente_sicai: referenteSicai,
+        referente_sicai_ambito: referenteSicai ? referenteSicaiAmbito : '',
+        marketing_consent: marketingConsent,
       });
       if (result.published) {
-        navigate(result.url ? result.url.replace(/^https?:\/\/[^/]+/, '') : `/?photo=${result.id}&verified=1`);
+        setPublished(true);
       } else {
-        navigate(`/upload/pending?email=${encodeURIComponent(result.email)}`);
+        navigate(`/upload/pending?email=${encodeURIComponent(result.email)}&email_sent=${result.email_sent !== false}`);
       }
     } catch (e) {
       setError(e.message);
@@ -197,6 +203,32 @@ export default function UploadPage() {
 
   const canProceedStep0 = !!file && autoreName.trim().length > 0 && EMAIL_RE.test(email.trim());
   const canProceedStep1 = !!position && withinThreshold;
+
+  if (published) {
+    return (
+      <div className="upload-page">
+        <div className="step-card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
+          <h2 style={{ marginBottom: 12 }}>Grazie per la tua foto!</h2>
+          <p style={{ fontSize: 15, color: '#333', lineHeight: 1.6, marginBottom: 10 }}>
+            Grazie per aver contribuito all'archivio fotografico del <strong>Sentiero Italia CAI</strong>.
+          </p>
+          <p style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 24 }}>
+            La tua foto è stata ricevuta ed è ora in attesa di approvazione da parte del <strong>team SICAI</strong>.
+            Non appena approvata, sarà visibile sulla mappa e nell'archivio pubblico.
+          </p>
+          <div className="btn-row" style={{ justifyContent: 'center' }}>
+            <button className="btn btn-primary" onClick={() => { setPublished(false); setStep(0); setFile(null); setPreviewUrl(null); setDraft(null); setTitolo(''); setCaption(''); }}>
+              Carica altre foto
+            </button>
+            <button className="btn btn-secondary" onClick={() => navigate('/')}>
+              Torna alla mappa
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="upload-page">
@@ -228,17 +260,6 @@ export default function UploadPage() {
             <label>Il tuo nome / Autore *</label>
             <input type="text" placeholder="Nome Cognome" value={autoreName} onChange={(e) => setAutoreName(e.target.value)} maxLength={80} />
           </div>
-          <div className="checkbox-row" style={{ marginBottom: 16 }}>
-            <input
-              type="checkbox"
-              id="remember-name"
-              checked={rememberName}
-              onChange={(e) => setRememberName(e.target.checked)}
-            />
-            <label htmlFor="remember-name" style={{ fontSize: 13, color: '#555' }}>
-              Ricorda il mio nome per i prossimi caricamenti
-            </label>
-          </div>
           <div className="field">
             <label>La tua email *</label>
             <input
@@ -249,18 +270,79 @@ export default function UploadPage() {
               maxLength={120}
             />
             <div className="hint" style={{ color: '#888' }}>
-              Riceverai un link per confermare e pubblicare la foto. Una volta verificata, l'email è ricordata per 30 giorni.
+              Riceverai un link per confermare la tua email. Dopo la conferma, la foto verrà sottoposta a validazione da parte di un amministratore prima di essere pubblicata.
             </div>
           </div>
-          <div className="checkbox-row" style={{ marginBottom: 4 }}>
+          {/* CAI membership */}
+          <div className="checkbox-row" style={{ marginTop: 16 }}>
+            <input type="checkbox" id="socio-cai" checked={socioCai} onChange={(e) => { setSocioCai(e.target.checked); if (!e.target.checked) { setReferenteSicai(false); setReferenteSicaiAmbito(''); } }} />
+            <label htmlFor="socio-cai" style={{ fontWeight: 500 }}>Sono socio CAI</label>
+          </div>
+          {socioCai && (
+            <div style={{ marginLeft: 24, marginTop: 8 }}>
+              <div className="field" style={{ marginBottom: 10 }}>
+                <label>Sezione CAI</label>
+                <input
+                  type="text"
+                  list="cai-sezioni-list"
+                  placeholder="Inizia a digitare la sezione…"
+                  value={sezioneCai}
+                  onChange={(e) => setSezioneCai(e.target.value)}
+                  maxLength={120}
+                />
+                <datalist id="cai-sezioni-list">
+                  {CAI_SEZIONI.map((s) => <option key={s} value={s} />)}
+                </datalist>
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label>Ruolo / Titolo nel CAI <span style={{ color: '#888', fontWeight: 400 }}>(opzionale)</span></label>
+                <input
+                  type="text"
+                  placeholder="es. Presidente di Sezione, Istruttore, …"
+                  value={ruoloCai}
+                  onChange={(e) => setRuoloCai(e.target.value)}
+                  maxLength={100}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* SICAI referente — visibile solo se socio */}
+          {socioCai && <div className="checkbox-row" style={{ marginTop: 12 }}>
+            <input type="checkbox" id="referente-sicai" checked={referenteSicai} onChange={(e) => setReferenteSicai(e.target.checked)} />
+            <label htmlFor="referente-sicai" style={{ fontWeight: 500 }}>Sono referente SICAI di tappa / regionale</label>
+          </div>}
+          {referenteSicai && (
+            <div style={{ marginLeft: 24, marginTop: 8 }}>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label>Regione o Tappa di riferimento</label>
+                <input
+                  type="text"
+                  placeholder="es. Toscana, Tappa SI-01…"
+                  value={referenteSicaiAmbito}
+                  onChange={(e) => setReferenteSicaiAmbito(e.target.value)}
+                  maxLength={100}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="checkbox-row" style={{ marginBottom: 4, marginTop: 16 }}>
             <input
               type="checkbox"
-              id="remember-email"
-              checked={rememberEmail}
-              onChange={(e) => setRememberEmail(e.target.checked)}
+              id="remember-data"
+              checked={rememberData}
+              onChange={(e) => {
+                setRememberData(e.target.checked);
+                if (!e.target.checked) {
+                  ['fotosicai_autore','fotosicai_email','fotosicai_socio','fotosicai_sezione',
+                   'fotosicai_ruolo','fotosicai_referente','fotosicai_referente_ambito']
+                    .forEach((k) => localStorage.removeItem(k));
+                }
+              }}
             />
-            <label htmlFor="remember-email" style={{ fontSize: 13, color: '#555' }}>
-              Ricorda la mia email per i prossimi caricamenti
+            <label htmlFor="remember-data" style={{ fontSize: 13, color: '#555' }}>
+              Ricorda i miei dati per i prossimi caricamenti
             </label>
           </div>
           <div className="btn-row">
@@ -268,10 +350,19 @@ export default function UploadPage() {
               className="btn btn-primary"
               disabled={!canProceedStep0}
               onClick={() => {
-                if (rememberName) localStorage.setItem('fotosicai_autore', autoreName.trim());
-                else localStorage.removeItem('fotosicai_autore');
-                if (rememberEmail) localStorage.setItem('fotosicai_email', email.trim().toLowerCase());
-                else localStorage.removeItem('fotosicai_email');
+                if (rememberData) {
+                  localStorage.setItem('fotosicai_autore', autoreName.trim());
+                  localStorage.setItem('fotosicai_email', email.trim().toLowerCase());
+                  localStorage.setItem('fotosicai_socio', socioCai ? '1' : '0');
+                  localStorage.setItem('fotosicai_sezione', sezioneCai);
+                  localStorage.setItem('fotosicai_ruolo', ruoloCai);
+                  localStorage.setItem('fotosicai_referente', referenteSicai ? '1' : '0');
+                  localStorage.setItem('fotosicai_referente_ambito', referenteSicaiAmbito);
+                } else {
+                  ['fotosicai_autore','fotosicai_email','fotosicai_socio','fotosicai_sezione',
+                   'fotosicai_ruolo','fotosicai_referente','fotosicai_referente_ambito']
+                    .forEach((k) => localStorage.removeItem(k));
+                }
                 setStep(1);
               }}
             >
@@ -411,43 +502,33 @@ export default function UploadPage() {
       {step === 3 && (
         <div className="step-card">
           <h2>4. Consenso</h2>
-          <p className="consent-required-note">Tutti i consensi seguenti sono obbligatori per proseguire.</p>
           {consent ? (
             <ConsentText markdown={consent.markdown} />
           ) : (
             <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}><span className="loading-dots">Caricamento</span></p>
           )}
-          <div className="checkbox-row">
+          <div className="checkbox-row" style={{ alignItems: 'flex-start', background: consentAccepted ? '#f0f7f0' : '#fff8f0', border: `1px solid ${consentAccepted ? '#b2d8b2' : '#f5a623'}`, borderRadius: 6, padding: '10px 12px' }}>
             <input
               type="checkbox"
-              id="consent-read-document"
-              checked={consentChecks.readDocument}
-              onChange={(e) => setConsentChecks((prev) => ({ ...prev, readDocument: e.target.checked }))}
+              id="consent-accepted"
+              checked={consentAccepted}
+              onChange={(e) => setConsentAccepted(e.target.checked)}
+              style={{ marginTop: 2, flexShrink: 0 }}
             />
-            <label htmlFor="consent-read-document">
-              Dichiaro di aver letto integralmente il documento di consenso e autorizzazione.
+            <label htmlFor="consent-accepted" style={{ fontWeight: 500 }}>
+              Dichiaro di aver letto il documento di consenso, di accettare la pubblicazione delle fotografie con licenza <strong>CC BY 4.0</strong>, di cedere i diritti di proprietà delle fotografie al <strong>Club Alpino Italiano</strong>, e di essere titolare dei diritti sulle foto caricate.{' '}
+              <span style={{ color: '#c00', fontWeight: 700 }}>Obbligatorio</span>
             </label>
           </div>
           <div className="checkbox-row" style={{ marginTop: 10 }}>
             <input
               type="checkbox"
-              id="consent-accept-license"
-              checked={consentChecks.acceptLicense}
-              onChange={(e) => setConsentChecks((prev) => ({ ...prev, acceptLicense: e.target.checked }))}
+              id="consent-marketing"
+              checked={marketingConsent}
+              onChange={(e) => setMarketingConsent(e.target.checked)}
             />
-            <label htmlFor="consent-accept-license">
-              Accetto che le fotografie siano pubblicate con licenza Creative Commons CC BY 4.0.
-            </label>
-          </div>
-          <div className="checkbox-row" style={{ marginTop: 10 }}>
-            <input
-              type="checkbox"
-              id="consent-rights-declaration"
-              checked={consentChecks.rightsDeclaration}
-              onChange={(e) => setConsentChecks((prev) => ({ ...prev, rightsDeclaration: e.target.checked }))}
-            />
-            <label htmlFor="consent-rights-declaration">
-              Dichiaro di essere titolare dei diritti sulle foto caricate e di avere eventuali liberatorie necessarie.
+            <label htmlFor="consent-marketing" style={{ color: '#555' }}>
+              Autorizzo <strong>Montagna Servizi SCPA</strong> a contattarmi per comunicazioni relative al Sentiero Italia CAI (facoltativo).
             </label>
           </div>
           <div className="btn-row" style={{ marginTop: 16 }}>
@@ -474,6 +555,11 @@ export default function UploadPage() {
             regione={draft?.suggested?.regione}
             provincia={draft?.suggested?.provincia}
             comune={draft?.suggested?.comune}
+            socioCai={socioCai}
+            sezioneCai={sezioneCai}
+            ruoloCai={ruoloCai}
+            referenteSicai={referenteSicai}
+            referenteSicaiAmbito={referenteSicaiAmbito}
           />
           <div className="btn-row" style={{ marginTop: 20 }}>
             <button className="btn btn-secondary" onClick={() => setStep(3)}>Indietro</button>

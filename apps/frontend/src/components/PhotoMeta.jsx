@@ -15,15 +15,30 @@ function formatDate(iso) {
   }
 }
 
-export default function PhotoMeta({ titolo, caption, autoreName, dataScatto, stageRef, distanceM, lat, lng, regione, provincia, comune }) {
+export default function PhotoMeta({
+  titolo, caption, autoreName, dataScatto,
+  stageRef, distanceM, lat, lng, regione, provincia, comune,
+  socioCai, sezioneCai, ruoloCai, referenteSicai, referenteSicaiAmbito,
+}) {
   const luogo = [regione, provincia, comune].filter(Boolean).join(' › ');
 
+  // Build author label with CAI info in parentheses
+  let autoreLabel = autoreName || null;
+  if (autoreLabel) {
+    const parts = [];
+    if (sezioneCai) parts.push(sezioneCai);
+    if (ruoloCai) parts.push(ruoloCai);
+    if (parts.length) autoreLabel = `${autoreLabel} (${parts.join(' — ')})`;
+  }
+
   const rows = [
-    titolo     ? { label: 'Titolo',          value: titolo } : null,
-    caption    ? { label: 'Descrizione',      value: caption } : null,
-    autoreName ? { label: 'Autore',           value: autoreName } : null,
-    dataScatto ? { label: 'Data dello scatto', value: formatDate(dataScatto) } : null,
-    stageRef   ? {
+    titolo       ? { label: 'Titolo',            value: titolo } : null,
+    caption      ? { label: 'Descrizione',        value: caption } : null,
+    autoreLabel  ? { label: 'Autore',             value: autoreLabel } : null,
+    referenteSicai && referenteSicaiAmbito
+                 ? { label: 'Referente SICAI',    value: referenteSicaiAmbito } : null,
+    dataScatto   ? { label: 'Data dello scatto',  value: formatDate(dataScatto) } : null,
+    stageRef     ? {
       label: 'Tappa SICAI',
       value: (
         <>
@@ -33,7 +48,7 @@ export default function PhotoMeta({ titolo, caption, autoreName, dataScatto, sta
       ),
     } : null,
     (lat != null && lng != null) ? { label: 'Coordinate', value: `${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}` } : null,
-    luogo      ? { label: 'Luogo',            value: luogo } : null,
+    luogo        ? { label: 'Luogo',              value: luogo } : null,
   ].filter(Boolean);
 
   if (!rows.length) return null;

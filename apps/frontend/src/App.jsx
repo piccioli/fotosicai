@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, Outlet } from 'react-router-dom';
 import MapPage from './pages/MapPage.jsx';
 import UploadPage from './pages/UploadPage.jsx';
 import VerifyPendingPage from './pages/VerifyPendingPage.jsx';
 import SearchPage from './pages/SearchPage.jsx';
 import PhotoDetailPage from './pages/PhotoDetailPage.jsx';
+import AdminLogin from './pages/admin/AdminLogin.jsx';
+import AdminLayout from './pages/admin/AdminLayout.jsx';
+import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+import AdminUsers from './pages/admin/AdminUsers.jsx';
+import AdminPhotos from './pages/admin/AdminPhotos.jsx';
 
 /* ── SVG icons ─────────────────────────────────────────────────────────── */
 
@@ -47,6 +52,15 @@ function IconInfo() {
   );
 }
 
+function IconUser() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4"/>
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+    </svg>
+  );
+}
+
 /* ── Info popup ────────────────────────────────────────────────────────── */
 
 function InfoPopup({ onClose }) {
@@ -77,7 +91,7 @@ function InfoPopup({ onClose }) {
         </div>
         <div style={{ fontSize: 11, color: '#aaa', borderTop: '1px solid #eee', paddingTop: 10, marginTop: 8, lineHeight: 1.8 }}>
           <div>
-            Software: FotoSICAI v{__APP_VERSION__}{' '}
+            Software: FotoSICAI v{__APP_VERSION__} ({__APP_RELEASE_DATE__}){' '}
             <span style={{
               display: 'inline-block', padding: '1px 6px', borderRadius: 3, fontSize: 10, fontWeight: 700,
               background: import.meta.env.VITE_APP_ENV === 'production' ? '#2e7d32' : '#e65100',
@@ -98,13 +112,12 @@ function InfoPopup({ onClose }) {
   );
 }
 
-/* ── App ───────────────────────────────────────────────────────────────── */
+/* ── Public layout (header + main) ─────────────────────────────────────── */
 
-export default function App() {
+function PublicLayout() {
   const [showInfo, setShowInfo] = useState(false);
-
   return (
-    <BrowserRouter>
+    <>
       <header className="app-header">
         <img className="app-header__logo" src="/logo-sicai.png" alt="SICAI" />
         <span className="app-header__title">FotoSICAI</span>
@@ -115,20 +128,38 @@ export default function App() {
           <button className="nav-icon-btn" title="Info sull'app" onClick={() => setShowInfo(true)}>
             <IconInfo />
           </button>
+          <NavLink to="/admin" title="Admin"><IconUser /></NavLink>
         </nav>
       </header>
-
       <main className="app-main">
-        <Routes>
+        <Outlet />
+      </main>
+      {showInfo && <InfoPopup onClose={() => setShowInfo(false)} />}
+    </>
+  );
+}
+
+/* ── App ───────────────────────────────────────────────────────────────── */
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route element={<PublicLayout />}>
           <Route path="/" element={<MapPage />} />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/upload/pending" element={<VerifyPendingPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/foto/:id" element={<PhotoDetailPage />} />
-        </Routes>
-      </main>
+        </Route>
 
-      {showInfo && <InfoPopup onClose={() => setShowInfo(false)} />}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="foto" element={<AdminPhotos />} />
+        </Route>
+      </Routes>
     </BrowserRouter>
   );
 }

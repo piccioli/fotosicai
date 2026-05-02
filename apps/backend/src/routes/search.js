@@ -3,13 +3,14 @@ const router = express.Router();
 const { getDb } = require('../db/index');
 
 const PAGE_SIZE = 24;
+const PUBLIC_COND = "status='published' AND validated_at IS NOT NULL";
 
 // GET /api/search/facets — distinct values for filter dropdowns
 router.get('/facets', (req, res) => {
   const db = getDb();
-  const regioni = db.prepare(`SELECT DISTINCT regione FROM images WHERE status='published' AND regione IS NOT NULL ORDER BY regione`).all().map((r) => r.regione);
-  const province = db.prepare(`SELECT DISTINCT provincia FROM images WHERE status='published' AND provincia IS NOT NULL ORDER BY provincia`).all().map((r) => r.provincia);
-  const comuni = db.prepare(`SELECT DISTINCT comune FROM images WHERE status='published' AND comune IS NOT NULL ORDER BY comune`).all().map((r) => r.comune);
+  const regioni = db.prepare(`SELECT DISTINCT regione FROM images WHERE ${PUBLIC_COND} AND regione IS NOT NULL ORDER BY regione`).all().map((r) => r.regione);
+  const province = db.prepare(`SELECT DISTINCT provincia FROM images WHERE ${PUBLIC_COND} AND provincia IS NOT NULL ORDER BY provincia`).all().map((r) => r.provincia);
+  const comuni = db.prepare(`SELECT DISTINCT comune FROM images WHERE ${PUBLIC_COND} AND comune IS NOT NULL ORDER BY comune`).all().map((r) => r.comune);
   res.json({ regioni, province, comuni });
 });
 
@@ -20,11 +21,9 @@ router.get('/', (req, res) => {
   const page = Math.max(1, Number(req.query.page) || 1);
   const offset = (page - 1) * PAGE_SIZE;
 
-  // Collect filter conditions and params separately from FTS
-  const conditions = [`i.status = 'published'`];
+  const conditions = [PUBLIC_COND];
   const filterParams = [];
 
-  // Full-text search: get matching rowids, inject as integer list (safe — all from DB)
   if (q && q.trim()) {
     try {
       const term = q.trim().replace(/['"*^()]/g, ' ').trim();
@@ -33,7 +32,6 @@ router.get('/', (req, res) => {
         `SELECT rowid FROM images_fts WHERE images_fts MATCH ? ORDER BY rank LIMIT 2000`
       ).all(`${term}*`);
       if (ftsRows.length === 0) return res.json({ items: [], total: 0, page, page_size: PAGE_SIZE });
-      // Safe to interpolate — rowids are integers straight from our own DB
       const rowidList = ftsRows.map((r) => Number(r.rowid)).join(',');
       conditions.push(`i.rowid IN (${rowidList})`);
     } catch (e) {

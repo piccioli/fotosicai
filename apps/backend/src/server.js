@@ -15,6 +15,10 @@ fs.mkdirSync(
   { recursive: true }
 );
 
+if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) {
+  console.warn('[startup] ADMIN_USERNAME e/o ADMIN_PASSWORD non impostati — interfaccia admin disabilitata');
+}
+
 getDb();
 loadStages();
 
