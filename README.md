@@ -2,9 +2,11 @@
 
 Webapp full-stack per il caricamento, la georeferenziazione e la visualizzazione di fotografie lungo il Sentiero Italia CAI (SICAI).
 
+**Versione corrente: v1.5.0** (maggio 2026) — novità e storico in [CHANGELOG.md](CHANGELOG.md).
+
 ## Funzionalità
 
-- **Upload guidato** (5 step): caricamento immagini con estrazione automatica metadati EXIF (GPS, data), posizionamento su mappa, generazione AI di titolo e caption (Claude vision), consenso e pubblicazione immediata
+- **Upload guidato** (più step, anche **multi-foto**): caricamento singolo o batch con estrazione EXIF (GPS, data), badge di validità rispetto al buffer SICAI, posizionamento su mappa dove serve, generazione AI di titolo e caption (Claude vision), consenso e pubblicazione
 - **Mappa interattiva**: visualizzazione foto georeferenziate come marker-thumbnail clusterizzati, overlay del tracciato SICAI
 - **Motore di ricerca**: testo libero (titolo, descrizione, autore, tappa) + filtri per regione, provincia, comune, tappa SICAI
 
