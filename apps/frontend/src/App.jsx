@@ -91,7 +91,7 @@ function InfoPopup({ onClose }) {
         </div>
         <div style={{ fontSize: 11, color: '#aaa', borderTop: '1px solid #eee', paddingTop: 10, marginTop: 8, lineHeight: 1.8 }}>
           <div>
-            Software: FotoSICAI v{__APP_VERSION__}{' '}
+            Software: FotoSICAI v{__APP_VERSION__} ({__APP_RELEASE_DATE__}){' '}
             <span style={{
               display: 'inline-block', padding: '1px 6px', borderRadius: 3, fontSize: 10, fontWeight: 700,
               background: import.meta.env.VITE_APP_ENV === 'production' ? '#2e7d32' : '#e65100',
