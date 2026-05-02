@@ -12,6 +12,8 @@ const ITALY_CENTER = [42.5, 12.5];
 const ITALY_ZOOM = 6;
 
 function EmailVerifiedModal({ onClose }) {
+  const navigate = useNavigate();
+
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose(); }
     window.addEventListener('keydown', onKey);
@@ -34,9 +36,14 @@ function EmailVerifiedModal({ onClose }) {
         <p style={{ fontSize: 13, color: '#888', lineHeight: 1.6, marginBottom: 20 }}>
           Grazie per il tuo contributo al Sentiero Italia!
         </p>
-        <button className="btn btn-primary" style={{ width: '100%' }} onClick={onClose}>
-          Chiudi
-        </button>
+        <div className="btn-row" style={{ justifyContent: 'center' }}>
+          <button className="btn btn-primary" onClick={() => { onClose(); navigate('/upload'); }}>
+            Carica nuove foto
+          </button>
+          <button className="btn btn-secondary" onClick={onClose}>
+            Chiudi
+          </button>
+        </div>
       </div>
     </div>
   );

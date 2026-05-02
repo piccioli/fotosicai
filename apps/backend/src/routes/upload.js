@@ -300,7 +300,16 @@ router.post('/:id/finalize', async (req, res, next) => {
     );
 
     try {
-      await sendVerificationEmail({ to: email, token });
+      await sendVerificationEmail({
+        to: email, token,
+        autoreNome: finalAutore,
+        socioCai: finalSocioCai === 1,
+        sezioneCai: finalSezioneCai,
+        ruoloCai: finalRuoloCai,
+        referenteSicai: finalReferenteSicai === 1,
+        referenteSicaiAmbito: finalReferenteSicaiAmbito,
+        marketingConsent: finalMarketingConsent === 1,
+      });
     } catch (mailErr) {
       // Keep data coherent: if the email cannot be sent, avoid leaving the photo stuck in pending state.
       db.prepare(

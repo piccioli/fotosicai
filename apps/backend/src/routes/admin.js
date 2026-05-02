@@ -80,6 +80,7 @@ router.get('/users', requireAdmin, (req, res) => {
       (SELECT i2.referente_sicai    FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) AS referente_sicai,
       (SELECT i2.referente_sicai_ambito FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) AS referente_sicai_ambito,
       MAX(i.marketing_consent) AS marketing_consent,
+      MAX(i.consenso) AS consenso,
       COUNT(*) AS photo_count,
       CASE WHEN EXISTS(SELECT 1 FROM verified_emails ve WHERE ve.email = LOWER(i.email)) THEN 1 ELSE 0 END AS verified,
       MIN(i.created_at) AS first_upload_at,
@@ -95,6 +96,7 @@ router.get('/users', requireAdmin, (req, res) => {
     socio_cai: r.socio_cai === 1,
     referente_sicai: r.referente_sicai === 1,
     marketing_consent: r.marketing_consent === 1,
+    consenso: r.consenso === 1,
   })));
 });
 
