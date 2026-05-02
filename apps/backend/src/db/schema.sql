@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS images (
   consenso             INTEGER NOT NULL DEFAULT 0,
   consenso_version     TEXT NOT NULL DEFAULT '',
   consenso_accepted_at TEXT NOT NULL DEFAULT '',
+  marketing_consent    INTEGER NOT NULL DEFAULT 0,
   created_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

@@ -35,6 +35,7 @@ function migrateImages(db) {
     'ALTER TABLE images ADD COLUMN ruolo_cai TEXT',
     'ALTER TABLE images ADD COLUMN referente_sicai INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE images ADD COLUMN referente_sicai_ambito TEXT',
+    'ALTER TABLE images ADD COLUMN marketing_consent INTEGER NOT NULL DEFAULT 0',
   ];
   for (const sql of newCols) {
     try { db.prepare(sql).run(); } catch (_) { /* column already exists */ }

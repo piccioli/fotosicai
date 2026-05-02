@@ -55,19 +55,13 @@ export default function UploadPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [consent, setConsent] = useState(null); // {version, markdown}
-  const [consentChecks, setConsentChecks] = useState({
-    readDocument: false,
-    acceptLicense: false,
-    rightsDeclaration: false,
-  });
+  const [consentAccepted, setConsentAccepted] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [mapFullscreen, setMapFullscreen] = useState(false);
   const [published, setPublished] = useState(false);
-  const allConsentAccepted =
-    consentChecks.readDocument &&
-    consentChecks.acceptLicense &&
-    consentChecks.rightsDeclaration;
+  const allConsentAccepted = consentAccepted;
 
   // Step 0: pick file
   async function handleFileChange(e) {
@@ -177,6 +171,7 @@ export default function UploadPage() {
         ruolo_cai: ruoloCai,
         referente_sicai: referenteSicai,
         referente_sicai_ambito: referenteSicai ? referenteSicaiAmbito : '',
+        marketing_consent: marketingConsent,
       });
       if (result.published) {
         setPublished(true);
@@ -507,43 +502,33 @@ export default function UploadPage() {
       {step === 3 && (
         <div className="step-card">
           <h2>4. Consenso</h2>
-          <p className="consent-required-note">Tutti i consensi seguenti sono obbligatori per proseguire.</p>
           {consent ? (
             <ConsentText markdown={consent.markdown} />
           ) : (
             <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}><span className="loading-dots">Caricamento</span></p>
           )}
-          <div className="checkbox-row">
+          <div className="checkbox-row" style={{ alignItems: 'flex-start', background: consentAccepted ? '#f0f7f0' : '#fff8f0', border: `1px solid ${consentAccepted ? '#b2d8b2' : '#f5a623'}`, borderRadius: 6, padding: '10px 12px' }}>
             <input
               type="checkbox"
-              id="consent-read-document"
-              checked={consentChecks.readDocument}
-              onChange={(e) => setConsentChecks((prev) => ({ ...prev, readDocument: e.target.checked }))}
+              id="consent-accepted"
+              checked={consentAccepted}
+              onChange={(e) => setConsentAccepted(e.target.checked)}
+              style={{ marginTop: 2, flexShrink: 0 }}
             />
-            <label htmlFor="consent-read-document">
-              Dichiaro di aver letto integralmente il documento di consenso e autorizzazione.
+            <label htmlFor="consent-accepted" style={{ fontWeight: 500 }}>
+              Dichiaro di aver letto il documento di consenso, di accettare la pubblicazione delle fotografie con licenza <strong>CC BY 4.0</strong>, di cedere i diritti di proprietà delle fotografie al <strong>Club Alpino Italiano</strong>, e di essere titolare dei diritti sulle foto caricate.{' '}
+              <span style={{ color: '#c00', fontWeight: 700 }}>Obbligatorio</span>
             </label>
           </div>
           <div className="checkbox-row" style={{ marginTop: 10 }}>
             <input
               type="checkbox"
-              id="consent-accept-license"
-              checked={consentChecks.acceptLicense}
-              onChange={(e) => setConsentChecks((prev) => ({ ...prev, acceptLicense: e.target.checked }))}
+              id="consent-marketing"
+              checked={marketingConsent}
+              onChange={(e) => setMarketingConsent(e.target.checked)}
             />
-            <label htmlFor="consent-accept-license">
-              Accetto che le fotografie siano pubblicate con licenza Creative Commons CC BY 4.0.
-            </label>
-          </div>
-          <div className="checkbox-row" style={{ marginTop: 10 }}>
-            <input
-              type="checkbox"
-              id="consent-rights-declaration"
-              checked={consentChecks.rightsDeclaration}
-              onChange={(e) => setConsentChecks((prev) => ({ ...prev, rightsDeclaration: e.target.checked }))}
-            />
-            <label htmlFor="consent-rights-declaration">
-              Dichiaro di essere titolare dei diritti sulle foto caricate e di avere eventuali liberatorie necessarie.
+            <label htmlFor="consent-marketing" style={{ color: '#555' }}>
+              Autorizzo <strong>Montagna Servizi SCPA</strong> a contattarmi per comunicazioni relative al Sentiero Italia CAI (facoltativo).
             </label>
           </div>
           <div className="btn-row" style={{ marginTop: 16 }}>

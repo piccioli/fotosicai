@@ -36,6 +36,7 @@ export default function AdminUsers() {
                   <th>Tappa / Regione</th>
                   <th>Foto</th>
                   <th>Email verif.</th>
+                  <th>Ricontatto</th>
                   <th>Ultima upload</th>
                 </tr>
               </thead>
@@ -62,6 +63,11 @@ export default function AdminUsers() {
                       {u.verified
                         ? <span className="admin-badge admin-badge--ok">Sì</span>
                         : <span className="admin-badge admin-badge--warn">No</span>}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      {u.marketing_consent
+                        ? <span className="admin-badge admin-badge--ok">Sì</span>
+                        : <span className="admin-badge admin-badge--neutral">No</span>}
                     </td>
                     <td>{fmt(u.last_upload_at)}</td>
                   </tr>

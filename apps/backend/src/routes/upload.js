@@ -30,6 +30,12 @@ router.post('/', upload.single('file'), async (req, res, next) => {
       return res.status(400).json({ error: 'email è obbligatoria e deve essere valida' });
     }
 
+    const db = getDb();
+    const isReturning = !!(
+      db.prepare('SELECT 1 FROM images WHERE LOWER(email) = LOWER(?) LIMIT 1').get(email) ||
+      db.prepare('SELECT 1 FROM verified_emails WHERE email = ? LIMIT 1').get(email)
+    );
+
     const id = uuidv4();
     const buffer = req.file.buffer;
 
@@ -65,7 +71,6 @@ router.post('/', upload.single('file'), async (req, res, next) => {
     // Process images (original + medium + thumb)
     const { paths, width, height } = await processImage(buffer, stageInfo.stage_ref, id);
 
-    const db = getDb();
     db.prepare(
       `INSERT INTO images (id, status, file_path, thumbnail_path, medium_path, width, height,
         lat, lng, position_source, paese, regione, provincia, comune,
@@ -83,6 +88,7 @@ router.post('/', upload.single('file'), async (req, res, next) => {
 
     res.json({
       id,
+      is_returning: isReturning,
       exif: { gps: exifGps, datetime: exifDatetime },
       suggested: {
         lat,
@@ -131,7 +137,8 @@ router.post('/:id/ai', async (req, res, next) => {
 router.post('/:id/finalize', async (req, res, next) => {
   try {
     const { titolo, caption, autore_nome, lat, lng, consenso_version, consenso_accepted,
-            socio_cai, sezione_cai, ruolo_cai, referente_sicai, referente_sicai_ambito } = req.body;
+            socio_cai, sezione_cai, ruolo_cai, referente_sicai, referente_sicai_ambito,
+            marketing_consent } = req.body;
 
     if (!consenso_accepted) return res.status(400).json({ error: 'Consenso obbligatorio' });
     if (!titolo || !titolo.trim()) return res.status(400).json({ error: 'Titolo obbligatorio' });
@@ -168,6 +175,7 @@ router.post('/:id/finalize', async (req, res, next) => {
     const finalRuoloCai = (ruolo_cai || '').trim().slice(0, 100) || null;
     const finalReferenteSicai = referente_sicai ? 1 : 0;
     const finalReferenteSicaiAmbito = finalReferenteSicai ? (referente_sicai_ambito || '').trim().slice(0, 100) || null : null;
+    const finalMarketingConsent = marketing_consent ? 1 : 0;
 
     const email = img.email;
 
@@ -192,7 +200,8 @@ router.post('/:id/finalize', async (req, res, next) => {
           ai_generated = ?,
           socio_cai = ?, sezione_cai = ?, ruolo_cai = ?,
           referente_sicai = ?, referente_sicai_ambito = ?,
-          consenso = 1, consenso_version = ?, consenso_accepted_at = ?
+          consenso = 1, consenso_version = ?, consenso_accepted_at = ?,
+          marketing_consent = ?
          WHERE id = ?`
       ).run(
         now, finalTitolo, finalCaption, finalAutore,
@@ -202,7 +211,7 @@ router.post('/:id/finalize', async (req, res, next) => {
         aiGenerated,
         finalSocioCai, finalSezioneCai, finalRuoloCai,
         finalReferenteSicai, finalReferenteSicaiAmbito,
-        consentVer, now, img.id
+        consentVer, now, finalMarketingConsent, img.id
       );
 
       const PUBLIC_BASE = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -243,7 +252,8 @@ router.post('/:id/finalize', async (req, res, next) => {
           ai_generated = ?,
           socio_cai = ?, sezione_cai = ?, ruolo_cai = ?,
           referente_sicai = ?, referente_sicai_ambito = ?,
-          consenso = 1, consenso_version = ?, consenso_accepted_at = ?
+          consenso = 1, consenso_version = ?, consenso_accepted_at = ?,
+          marketing_consent = ?
          WHERE id = ?`
       ).run(
         sentAtForQueue,
@@ -254,7 +264,7 @@ router.post('/:id/finalize', async (req, res, next) => {
         aiGenerated,
         finalSocioCai, finalSezioneCai, finalRuoloCai,
         finalReferenteSicai, finalReferenteSicaiAmbito,
-        consentVer, now, img.id
+        consentVer, now, finalMarketingConsent, img.id
       );
       return res.json({ pending: true, id: img.id, email, email_sent: false });
     }
@@ -274,7 +284,8 @@ router.post('/:id/finalize', async (req, res, next) => {
         ai_generated = ?,
         socio_cai = ?, sezione_cai = ?, ruolo_cai = ?,
         referente_sicai = ?, referente_sicai_ambito = ?,
-        consenso = 1, consenso_version = ?, consenso_accepted_at = ?
+        consenso = 1, consenso_version = ?, consenso_accepted_at = ?,
+        marketing_consent = ?
        WHERE id = ?`
     ).run(
       token, now,
@@ -285,7 +296,7 @@ router.post('/:id/finalize', async (req, res, next) => {
       aiGenerated,
       finalSocioCai, finalSezioneCai, finalRuoloCai,
       finalReferenteSicai, finalReferenteSicaiAmbito,
-      consentVer, now, img.id
+      consentVer, now, finalMarketingConsent, img.id
     );
 
     try {
