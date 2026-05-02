@@ -337,7 +337,14 @@ export default function UploadPage() {
               type="checkbox"
               id="remember-data"
               checked={rememberData}
-              onChange={(e) => setRememberData(e.target.checked)}
+              onChange={(e) => {
+                setRememberData(e.target.checked);
+                if (!e.target.checked) {
+                  ['fotosicai_autore','fotosicai_email','fotosicai_socio','fotosicai_sezione',
+                   'fotosicai_ruolo','fotosicai_referente','fotosicai_referente_ambito']
+                    .forEach((k) => localStorage.removeItem(k));
+                }
+              }}
             />
             <label htmlFor="remember-data" style={{ fontSize: 13, color: '#555' }}>
               Ricorda i miei dati per i prossimi caricamenti
