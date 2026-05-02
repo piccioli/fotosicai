@@ -216,6 +216,139 @@ button { cursor: pointer; }
 .photo-detail { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
 .photo-detail img { width: 100%; border-radius: 8px; margin-bottom: 20px; }
 .photo-detail h1 { font-size: 1.5rem; margin-bottom: 8px; }
+.photo-detail__map { width: 100%; height: 320px; border-radius: 8px; margin-top: 20px; border: 1px solid #ddd; }
+.photo-detail__citation { margin-top: 28px; background: #f8f8f8; border-radius: 8px; padding: 16px 20px; border: 1px solid #eee; }
+.photo-detail__citation-title { font-size: 13px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+.photo-detail__citation-text { font-size: 13px; color: #333; line-height: 1.6; font-style: italic; margin-bottom: 12px; }
+.photo-detail__citation-copy { background: #1a2332; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-size: 13px; cursor: pointer; transition: background .15s; }
+.photo-detail__citation-copy:hover { background: #243045; }
+
+/* Edit photo modal (step 4 summary) */
+.edit-modal-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.edit-modal {
+  background: #fff; border-radius: 12px;
+  width: 100%; max-width: 600px; max-height: 90vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 8px 40px rgba(0,0,0,.3);
+}
+.edit-modal__header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 12px; border-bottom: 1px solid #eee; flex-shrink: 0;
+}
+.edit-modal__title { font-size: 1rem; font-weight: 700; margin: 0; }
+.edit-modal__close {
+  background: none; border: none; font-size: 24px; cursor: pointer;
+  color: #999; line-height: 1; padding: 0 2px;
+}
+.edit-modal__close:hover { color: #333; }
+.edit-modal__body { overflow-y: auto; padding: 16px 20px; flex: 1; }
+.edit-modal__thumb {
+  width: 100%; max-height: 160px; object-fit: cover;
+  border-radius: 6px; margin-bottom: 16px;
+}
+.edit-modal__footer {
+  display: flex; gap: 10px; padding: 12px 20px;
+  border-top: 1px solid #eee; flex-shrink: 0; justify-content: flex-end;
+}
+
+/* File drop zone (step 0) */
+.file-drop-zone {
+  border: 2px dashed #ccc; border-radius: 10px;
+  padding: 32px 20px; text-align: center; cursor: pointer;
+  transition: border-color .15s, background .15s;
+  background: #fafafa; margin-bottom: 4px; user-select: none;
+}
+.file-drop-zone:hover { border-color: #cc0000; background: #fff5f5; }
+.file-drop-zone--over { border-color: #cc0000; background: #fff0f0; }
+.file-drop-zone__icon { font-size: 36px; margin-bottom: 8px; }
+.file-drop-zone__text { font-size: 15px; color: #333; margin: 0 0 12px; }
+.file-drop-zone--over .file-drop-zone__text { font-size: 16px; font-weight: 600; color: #cc0000; }
+.file-drop-zone__hint { font-size: 12px; color: #999; margin: 10px 0 0; }
+
+/* Multi-photo upload grid (step 0 thumbnail selection) */
+.photo-thumb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+.photo-thumb {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f0f0f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,.12);
+}
+.photo-thumb img {
+  width: 100%; height: 100px; object-fit: cover; display: block;
+}
+.photo-thumb__name {
+  font-size: 11px; color: #555; padding: 4px 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.photo-thumb__remove {
+  position: absolute; top: 4px; right: 4px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(0,0,0,.55); color: #fff; border: none; cursor: pointer;
+  font-size: 13px; display: flex; align-items: center; justify-content: center; padding: 0;
+}
+.photo-thumb__remove:hover:not(:disabled) { background: rgba(200,0,0,.8); }
+.photo-thumb__badge {
+  position: absolute; top: 4px; left: 4px;
+  color: #fff; font-size: 10px; padding: 2px 5px; border-radius: 4px;
+}
+.photo-thumb__badge--ok       { background: rgba(30,130,30,.85); }
+.photo-thumb__badge--offtrail { background: rgba(110,110,110,.85); }
+.photo-thumb__badge--nogps    { background: rgba(200,30,30,.85); }
+.photo-thumb__badge--loading  { background: rgba(160,160,160,.60); }
+
+/* GPS badge legend (step 0, below thumbnail grid) */
+.gps-legend {
+  margin-top: 10px; margin-bottom: 4px;
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 10px 12px; background: #f8f9fa; border-radius: 6px;
+  font-size: 12px; color: #444; line-height: 1.45;
+}
+.gps-legend__item {
+  display: flex; align-items: baseline; gap: 8px;
+}
+.gps-legend__dot {
+  flex-shrink: 0; width: 10px; height: 10px; border-radius: 3px;
+  display: inline-block; position: relative; top: 1px;
+}
+.gps-legend__dot--ok       { background: rgba(30,130,30,.85); }
+.gps-legend__dot--offtrail { background: rgba(110,110,110,.85); }
+.gps-legend__dot--nogps    { background: rgba(200,30,30,.85); }
+
+/* Per-photo progress badge (steps 1-2 for multi-photo) */
+.photo-progress-badge {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px; padding: 8px 10px;
+  background: #f5f7fa; border-radius: 6px;
+}
+.photo-progress-badge img {
+  width: 40px; height: 40px; object-fit: cover;
+  border-radius: 4px; flex-shrink: 0; border: 1px solid #ddd;
+}
+
+/* Summary card (step 4 review for each photo) */
+.upload-summary-card {
+  background: #fff; border: 1px solid #e8e8e8;
+  border-radius: 8px; overflow: hidden; margin-bottom: 16px;
+}
+.upload-summary-card img {
+  width: 100%; max-height: 200px; object-fit: cover; display: block;
+}
+.upload-summary-card__label {
+  padding: 6px 12px 0; font-size: 12px; font-weight: 600; color: #888;
+}
+.upload-summary-card__body { padding: 8px 12px 12px; }
 
 /* Shared metadata block */
 .photo-meta { font-size: 13px; line-height: 1.6; margin: 0; }
@@ -240,10 +373,11 @@ button { cursor: pointer; }
 .admin-login-title { font-size: 1.2rem; font-weight: 700; text-align: center; color: #222; }
 
 /* Shell */
-.admin-shell { display: flex; min-height: 100vh; background: #f0f2f5; }
+.admin-shell { display: flex; height: 100vh; overflow: hidden; background: #f0f2f5; }
 .admin-sidebar {
   width: 200px; flex-shrink: 0; background: #1a2332; color: #fff;
   display: flex; flex-direction: column; padding: 24px 0;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
 }
 .admin-sidebar__brand {
   display: flex; align-items: center; gap: 10px;
@@ -385,6 +519,14 @@ button { cursor: pointer; }
 
 /* Pagination */
 .admin-pagination { display: flex; align-items: center; gap: 12px; justify-content: center; margin-top: 24px; font-size: 13px; color: #666; }
+.admin-pagination--sticky {
+  position: sticky; bottom: 0;
+  background: #f0f2f5;
+  padding: 12px 0;
+  margin-top: 12px;
+  border-top: 1px solid #e0e0e0;
+  z-index: 10;
+}
 
 /* Alerts / states */
 .admin-alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }

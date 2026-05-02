@@ -330,13 +330,11 @@ export default function AdminPhotos() {
                 </table>
               </div>
 
-              {totalPages > 1 && (
-                <div className="admin-pagination">
-                  <button className="admin-btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>← Prec.</button>
-                  <span>Pag. {page} / {totalPages}</span>
-                  <button className="admin-btn" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Succ. →</button>
-                </div>
-              )}
+              <div className="admin-pagination admin-pagination--sticky">
+                <button className="admin-btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>← Prec.</button>
+                <span>Pag. {page} / {totalPages}</span>
+                <button className="admin-btn" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Succ. →</button>
+              </div>
             </>
           )}
     </div>

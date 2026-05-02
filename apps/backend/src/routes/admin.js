@@ -5,6 +5,14 @@ const router = express.Router();
 const { getDb } = require('../db/index');
 const { requireAdmin, signSessionToken } = require('../middleware/auth');
 const { deleteImageFiles } = require('../services/storage');
+const { getStageList } = require('../services/stages');
+
+const ITALIAN_REGIONS = [
+  'Abruzzo','Basilicata','Calabria','Campania','Emilia-Romagna',
+  'Friuli-Venezia Giulia','Lazio','Liguria','Lombardia','Marche',
+  'Molise','Piemonte','Puglia','Sardegna','Sicilia','Toscana',
+  'Trentino-Alto Adige','Umbria','Valle d\'Aosta','Veneto',
+];
 
 // POST /api/admin/login
 router.post('/login', (req, res) => {
@@ -58,20 +66,47 @@ router.get('/stats', requireAdmin, (req, res) => {
   const total_published = db.prepare("SELECT COUNT(*) AS n FROM images WHERE status='published' AND validated_at IS NOT NULL").get().n;
 
   const by_stage = db
-    .prepare("SELECT stage_ref, COUNT(*) AS count FROM images WHERE status='published' AND validated_at IS NOT NULL AND stage_ref IS NOT NULL GROUP BY stage_ref ORDER BY stage_ref")
+    .prepare("SELECT stage_ref, COUNT(*) AS count FROM images WHERE status='published' AND validated_at IS NOT NULL AND stage_ref IS NOT NULL GROUP BY stage_ref ORDER BY count DESC")
     .all();
 
   const by_region = db
     .prepare("SELECT regione, COUNT(*) AS count FROM images WHERE status='published' AND validated_at IS NOT NULL AND regione IS NOT NULL GROUP BY regione ORDER BY count DESC")
     .all();
 
-  res.json({ total_uploaded, total_pending_email, total_pending_validation, total_published, by_stage, by_region });
+  const publishedStageRefs = new Set(by_stage.map((r) => r.stage_ref));
+  const missing_stages = getStageList()
+    .map((s) => s.sicai_ref)
+    .filter((ref) => !publishedStageRefs.has(ref))
+    .sort();
+
+  const publishedRegioni = new Set(by_region.map((r) => r.regione));
+  const missing_regioni = ITALIAN_REGIONS.filter((r) => !publishedRegioni.has(r)).sort();
+
+  const total_users = db.prepare("SELECT COUNT(DISTINCT LOWER(email)) AS n FROM images WHERE email <> ''").get().n;
+  const total_verified = db.prepare("SELECT COUNT(*) AS n FROM verified_emails").get().n;
+  const top10_users = db
+    .prepare("SELECT LOWER(email) AS email, MAX(autore_nome) AS autore_nome, COUNT(*) AS photo_count FROM images WHERE email <> '' GROUP BY LOWER(email) ORDER BY photo_count DESC LIMIT 10")
+    .all();
+
+  res.json({
+    total_uploaded, total_pending_email, total_pending_validation, total_published,
+    by_stage, by_region,
+    missing_stages, missing_regioni,
+    total_users, total_verified, total_unverified: Math.max(0, total_users - total_verified),
+    top10_users,
+  });
 });
 
 // GET /api/admin/users
 router.get('/users', requireAdmin, (req, res) => {
   const db = getDb();
-  const rows = db.prepare(`
+  const PAGE_SIZE = 50;
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const offset = (page - 1) * PAGE_SIZE;
+
+  const total = db.prepare("SELECT COUNT(DISTINCT LOWER(email)) AS n FROM images WHERE email <> ''").get().n;
+
+  const USER_QUERY = `
     SELECT
       LOWER(i.email) AS email,
       (SELECT i2.autore_nome        FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) AS autore_nome,
@@ -91,15 +126,18 @@ router.get('/users', requireAdmin, (req, res) => {
     WHERE i.email <> ''
     GROUP BY LOWER(i.email)
     ORDER BY last_upload_at DESC
-  `).all();
-  res.json(rows.map((r) => ({
+    LIMIT ? OFFSET ?
+  `;
+  const rows = db.prepare(USER_QUERY).all(PAGE_SIZE, offset);
+  const items = rows.map((r) => ({
     ...r,
     verified: r.verified === 1,
     socio_cai: r.socio_cai === 1,
     referente_sicai: r.referente_sicai === 1,
     marketing_consent: r.marketing_consent === 1,
     consenso: r.consenso === 1,
-  })));
+  }));
+  res.json({ items, total, page, page_size: PAGE_SIZE });
 });
 
 // GET /api/admin/users/export — scarica XLS di tutti gli utenti
