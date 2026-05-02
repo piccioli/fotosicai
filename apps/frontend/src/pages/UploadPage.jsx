@@ -25,7 +25,7 @@ function IconCompress() {
   );
 }
 
-const STEPS = ['1. File', '2. Posizione', '3. Titolo & AI', '4. Consenso', '5. Conferma'];
+const STEPS = ['1. File', '2. Posizione', '3. Titolo & AI', '4. Riepilogo', '5. Pubblica'];
 const ITALY_CENTER = { lat: 42.5, lng: 12.5 };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 let _uid = 0;
@@ -211,7 +211,7 @@ export default function UploadPage() {
   }, [step, currentPhotoIdx]); // photos intentionally omitted — only trigger on step/photo navigation
 
   useEffect(() => {
-    if (step === 3 && !consent) {
+    if (step >= 3 && !consent) {
       api.getConsent().then(setConsent).catch(() => {});
     }
   }, [step]);
@@ -648,53 +648,10 @@ export default function UploadPage() {
         </div>
       )}
 
-      {/* STEP 3 — Consent */}
+      {/* STEP 3 — Summary */}
       {step === 3 && (
         <div className="step-card">
-          <h2>4. Consenso</h2>
-          {consent ? (
-            <ConsentText markdown={consent.markdown} />
-          ) : (
-            <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}><span className="loading-dots">Caricamento</span></p>
-          )}
-          <div className="checkbox-row" style={{ alignItems: 'flex-start', background: consentAccepted ? '#f0f7f0' : '#fff8f0', border: `1px solid ${consentAccepted ? '#b2d8b2' : '#f5a623'}`, borderRadius: 6, padding: '10px 12px' }}>
-            <input
-              type="checkbox"
-              id="consent-accepted"
-              checked={consentAccepted}
-              onChange={(e) => setConsentAccepted(e.target.checked)}
-              style={{ marginTop: 2, flexShrink: 0 }}
-            />
-            <label htmlFor="consent-accepted" style={{ fontWeight: 500 }}>
-              Dichiaro di aver letto il documento di consenso, di accettare la pubblicazione delle fotografie con licenza <strong>CC BY 4.0</strong>, di cedere i diritti di proprietà delle fotografie al <strong>Club Alpino Italiano</strong>, e di essere titolare dei diritti sulle foto caricate.{' '}
-              <span style={{ color: '#c00', fontWeight: 700 }}>Obbligatorio</span>
-            </label>
-          </div>
-          <div className="checkbox-row" style={{ marginTop: 10 }}>
-            <input
-              type="checkbox"
-              id="consent-marketing"
-              checked={marketingConsent}
-              onChange={(e) => setMarketingConsent(e.target.checked)}
-            />
-            <label htmlFor="consent-marketing" style={{ color: '#555' }}>
-              Autorizzo <strong>Montagna Servizi SCPA</strong> a contattarmi per comunicazioni relative al Sentiero Italia CAI (facoltativo).
-            </label>
-          </div>
-          <div className="btn-row" style={{ marginTop: 16 }}>
-            <button className="btn btn-secondary" onClick={() => {
-              setCurrentPhotoIdx(photos.length - 1);
-              setStep(2);
-            }}>Indietro</button>
-            <button className="btn btn-primary" disabled={!consentAccepted} onClick={() => setStep(4)}>Avanti</button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 4 — Confirm */}
-      {step === 4 && (
-        <div className="step-card">
-          <h2>5. Riepilogo e conferma</h2>
+          <h2>4. Riepilogo</h2>
 
           {photos.length > 1 && (
             <div style={{ marginBottom: 16, padding: '12px', background: '#f5f7fa', borderRadius: 6 }}>
@@ -734,8 +691,51 @@ export default function UploadPage() {
           ))}
 
           <div className="btn-row" style={{ marginTop: 20 }}>
+            <button className="btn btn-secondary" onClick={() => {
+              setCurrentPhotoIdx(photos.length - 1);
+              setStep(2);
+            }}>Indietro</button>
+            <button className="btn btn-primary" onClick={() => setStep(4)}>Avanti</button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 4 — Consent + Publish */}
+      {step === 4 && (
+        <div className="step-card">
+          <h2>5. Accetta e pubblica</h2>
+          {consent ? (
+            <ConsentText markdown={consent.markdown} />
+          ) : (
+            <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}><span className="loading-dots">Caricamento</span></p>
+          )}
+          <div className="checkbox-row" style={{ alignItems: 'flex-start', background: consentAccepted ? '#f0f7f0' : '#fff8f0', border: `1px solid ${consentAccepted ? '#b2d8b2' : '#f5a623'}`, borderRadius: 6, padding: '10px 12px' }}>
+            <input
+              type="checkbox"
+              id="consent-accepted"
+              checked={consentAccepted}
+              onChange={(e) => setConsentAccepted(e.target.checked)}
+              style={{ marginTop: 2, flexShrink: 0 }}
+            />
+            <label htmlFor="consent-accepted" style={{ fontWeight: 500 }}>
+              Dichiaro di aver letto il documento di consenso, di accettare la pubblicazione delle fotografie con licenza <strong>CC BY 4.0</strong>, di cedere i diritti di proprietà delle fotografie al <strong>Club Alpino Italiano</strong>, e di essere titolare dei diritti sulle foto caricate.{' '}
+              <span style={{ color: '#c00', fontWeight: 700 }}>Obbligatorio</span>
+            </label>
+          </div>
+          <div className="checkbox-row" style={{ marginTop: 10 }}>
+            <input
+              type="checkbox"
+              id="consent-marketing"
+              checked={marketingConsent}
+              onChange={(e) => setMarketingConsent(e.target.checked)}
+            />
+            <label htmlFor="consent-marketing" style={{ color: '#555' }}>
+              Autorizzo <strong>Montagna Servizi SCPA</strong> a contattarmi per comunicazioni relative al Sentiero Italia CAI (facoltativo).
+            </label>
+          </div>
+          <div className="btn-row" style={{ marginTop: 16 }}>
             <button className="btn btn-secondary" onClick={() => setStep(3)}>Indietro</button>
-            <button className="btn btn-primary" disabled={submitting} onClick={handleFinalize}>
+            <button className="btn btn-primary" disabled={submitting || !consentAccepted} onClick={handleFinalize}>
               {submitting
                 ? <span className="loading-dots">{submitProgress || 'Pubblicazione'}</span>
                 : photos.length > 1 ? `Pubblica ${photos.length} foto` : 'Pubblica foto'}
