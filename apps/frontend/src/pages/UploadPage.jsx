@@ -5,6 +5,7 @@ import { api } from '../lib/api.js';
 import LocationPicker from '../components/LocationPicker.jsx';
 import ConsentText from '../components/ConsentText.jsx';
 import PhotoMeta from '../components/PhotoMeta.jsx';
+import { CAI_SEZIONI } from '../lib/caiSezioni.js';
 
 function IconExpand() {
   return (
@@ -42,6 +43,11 @@ export default function UploadPage() {
   const [autoreName, setAutoreName] = useState(() => localStorage.getItem('fotosicai_autore') || '');
   const [email, setEmail] = useState(() => localStorage.getItem('fotosicai_email') || '');
   const [rememberData, setRememberData] = useState(() => !!(localStorage.getItem('fotosicai_autore') || localStorage.getItem('fotosicai_email')));
+  const [socioCai, setSocioCai] = useState(() => localStorage.getItem('fotosicai_socio') === '1');
+  const [sezioneCai, setSezioneCai] = useState(() => localStorage.getItem('fotosicai_sezione') || '');
+  const [ruoloCai, setRuoloCai] = useState(() => localStorage.getItem('fotosicai_ruolo') || '');
+  const [referenteSicai, setReferenteSicai] = useState(() => localStorage.getItem('fotosicai_referente') === '1');
+  const [referenteSicaiAmbito, setReferenteSicaiAmbito] = useState(() => localStorage.getItem('fotosicai_referente_ambito') || '');
   const [position, setPosition] = useState(null); // {lat, lng}
   const [draft, setDraft] = useState(null); // response from POST /api/upload
   const [titolo, setTitolo] = useState('');
@@ -166,6 +172,11 @@ export default function UploadPage() {
         consenso_version: consent?.version || '',
         consenso_accepted: true,
         ai_generated: !aiError && !!titolo,
+        socio_cai: socioCai,
+        sezione_cai: socioCai ? sezioneCai : '',
+        ruolo_cai: ruoloCai,
+        referente_sicai: referenteSicai,
+        referente_sicai_ambito: referenteSicai ? referenteSicaiAmbito : '',
       });
       if (result.published) {
         setPublished(true);
@@ -267,7 +278,61 @@ export default function UploadPage() {
               Riceverai un link per confermare la tua email. Dopo la conferma, la foto verrà sottoposta a validazione da parte di un amministratore prima di essere pubblicata.
             </div>
           </div>
-          <div className="checkbox-row" style={{ marginBottom: 4 }}>
+          {/* CAI membership */}
+          <div className="checkbox-row" style={{ marginTop: 16 }}>
+            <input type="checkbox" id="socio-cai" checked={socioCai} onChange={(e) => { setSocioCai(e.target.checked); if (!e.target.checked) { setReferenteSicai(false); setReferenteSicaiAmbito(''); } }} />
+            <label htmlFor="socio-cai" style={{ fontWeight: 500 }}>Sono socio CAI</label>
+          </div>
+          {socioCai && (
+            <div style={{ marginLeft: 24, marginTop: 8 }}>
+              <div className="field" style={{ marginBottom: 10 }}>
+                <label>Sezione CAI</label>
+                <input
+                  type="text"
+                  list="cai-sezioni-list"
+                  placeholder="Inizia a digitare la sezione…"
+                  value={sezioneCai}
+                  onChange={(e) => setSezioneCai(e.target.value)}
+                  maxLength={120}
+                />
+                <datalist id="cai-sezioni-list">
+                  {CAI_SEZIONI.map((s) => <option key={s} value={s} />)}
+                </datalist>
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label>Ruolo / Titolo nel CAI <span style={{ color: '#888', fontWeight: 400 }}>(opzionale)</span></label>
+                <input
+                  type="text"
+                  placeholder="es. Presidente di Sezione, Istruttore, …"
+                  value={ruoloCai}
+                  onChange={(e) => setRuoloCai(e.target.value)}
+                  maxLength={100}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* SICAI referente — visibile solo se socio */}
+          {socioCai && <div className="checkbox-row" style={{ marginTop: 12 }}>
+            <input type="checkbox" id="referente-sicai" checked={referenteSicai} onChange={(e) => setReferenteSicai(e.target.checked)} />
+            <label htmlFor="referente-sicai" style={{ fontWeight: 500 }}>Sono referente SICAI di tappa / regionale</label>
+          </div>}
+          {referenteSicai && (
+            <div style={{ marginLeft: 24, marginTop: 8 }}>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label>Regione o Tappa di riferimento</label>
+                <input
+                  type="text"
+                  placeholder="es. Toscana, Tappa SI-01…"
+                  value={referenteSicaiAmbito}
+                  onChange={(e) => setReferenteSicaiAmbito(e.target.value)}
+                  maxLength={100}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="checkbox-row" style={{ marginBottom: 4, marginTop: 16 }}>
             <input
               type="checkbox"
               id="remember-data"
@@ -286,9 +351,15 @@ export default function UploadPage() {
                 if (rememberData) {
                   localStorage.setItem('fotosicai_autore', autoreName.trim());
                   localStorage.setItem('fotosicai_email', email.trim().toLowerCase());
+                  localStorage.setItem('fotosicai_socio', socioCai ? '1' : '0');
+                  localStorage.setItem('fotosicai_sezione', sezioneCai);
+                  localStorage.setItem('fotosicai_ruolo', ruoloCai);
+                  localStorage.setItem('fotosicai_referente', referenteSicai ? '1' : '0');
+                  localStorage.setItem('fotosicai_referente_ambito', referenteSicaiAmbito);
                 } else {
-                  localStorage.removeItem('fotosicai_autore');
-                  localStorage.removeItem('fotosicai_email');
+                  ['fotosicai_autore','fotosicai_email','fotosicai_socio','fotosicai_sezione',
+                   'fotosicai_ruolo','fotosicai_referente','fotosicai_referente_ambito']
+                    .forEach((k) => localStorage.removeItem(k));
                 }
                 setStep(1);
               }}
@@ -492,6 +563,11 @@ export default function UploadPage() {
             regione={draft?.suggested?.regione}
             provincia={draft?.suggested?.provincia}
             comune={draft?.suggested?.comune}
+            socioCai={socioCai}
+            sezioneCai={sezioneCai}
+            ruoloCai={ruoloCai}
+            referenteSicai={referenteSicai}
+            referenteSicaiAmbito={referenteSicaiAmbito}
           />
           <div className="btn-row" style={{ marginTop: 20 }}>
             <button className="btn btn-secondary" onClick={() => setStep(3)}>Indietro</button>

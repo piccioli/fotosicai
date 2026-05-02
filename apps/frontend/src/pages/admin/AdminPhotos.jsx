@@ -80,6 +80,11 @@ function PhotoModal({ id, onClose, onReload }) {
                 regione={photo.regione}
                 provincia={photo.provincia}
                 comune={photo.comune}
+                socioCai={!!photo.socio_cai}
+                sezioneCai={photo.sezione_cai}
+                ruoloCai={photo.ruolo_cai}
+                referenteSicai={!!photo.referente_sicai}
+                referenteSicaiAmbito={photo.referente_sicai_ambito}
               />
 
               <p style={{ fontSize: 12, color: '#888', marginTop: 12 }}>

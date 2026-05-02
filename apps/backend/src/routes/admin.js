@@ -73,7 +73,12 @@ router.get('/users', requireAdmin, (req, res) => {
   const rows = db.prepare(`
     SELECT
       LOWER(i.email) AS email,
-      (SELECT i2.autore_nome FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) AS autore_nome,
+      (SELECT i2.autore_nome        FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) AS autore_nome,
+      (SELECT i2.socio_cai          FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) AS socio_cai,
+      (SELECT i2.sezione_cai        FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) AS sezione_cai,
+      (SELECT i2.ruolo_cai          FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) AS ruolo_cai,
+      (SELECT i2.referente_sicai    FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) AS referente_sicai,
+      (SELECT i2.referente_sicai_ambito FROM images i2 WHERE LOWER(i2.email) = LOWER(i.email) ORDER BY i2.created_at DESC LIMIT 1) AS referente_sicai_ambito,
       COUNT(*) AS photo_count,
       CASE WHEN EXISTS(SELECT 1 FROM verified_emails ve WHERE ve.email = LOWER(i.email)) THEN 1 ELSE 0 END AS verified,
       MIN(i.created_at) AS first_upload_at,
@@ -83,7 +88,12 @@ router.get('/users', requireAdmin, (req, res) => {
     GROUP BY LOWER(i.email)
     ORDER BY last_upload_at DESC
   `).all();
-  res.json(rows.map((r) => ({ ...r, verified: r.verified === 1 })));
+  res.json(rows.map((r) => ({
+    ...r,
+    verified: r.verified === 1,
+    socio_cai: r.socio_cai === 1,
+    referente_sicai: r.referente_sicai === 1,
+  })));
 });
 
 // GET /api/admin/facets — valori distinti per i filtri (tutte le foto, non solo published)

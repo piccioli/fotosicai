@@ -30,6 +30,11 @@ function migrateImages(db) {
     'ALTER TABLE images ADD COLUMN verified_at TEXT',
     'ALTER TABLE images ADD COLUMN validated_at TEXT',
     'ALTER TABLE images ADD COLUMN validated_by TEXT',
+    'ALTER TABLE images ADD COLUMN socio_cai INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE images ADD COLUMN sezione_cai TEXT',
+    'ALTER TABLE images ADD COLUMN ruolo_cai TEXT',
+    'ALTER TABLE images ADD COLUMN referente_sicai INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE images ADD COLUMN referente_sicai_ambito TEXT',
   ];
   for (const sql of newCols) {
     try { db.prepare(sql).run(); } catch (_) { /* column already exists */ }

@@ -130,7 +130,8 @@ router.post('/:id/ai', async (req, res, next) => {
 // POST /api/upload/:id/finalize — pubblica la foto (con verifica email)
 router.post('/:id/finalize', async (req, res, next) => {
   try {
-    const { titolo, caption, autore_nome, lat, lng, consenso_version, consenso_accepted } = req.body;
+    const { titolo, caption, autore_nome, lat, lng, consenso_version, consenso_accepted,
+            socio_cai, sezione_cai, ruolo_cai, referente_sicai, referente_sicai_ambito } = req.body;
 
     if (!consenso_accepted) return res.status(400).json({ error: 'Consenso obbligatorio' });
     if (!titolo || !titolo.trim()) return res.status(400).json({ error: 'Titolo obbligatorio' });
@@ -162,6 +163,12 @@ router.post('/:id/finalize', async (req, res, next) => {
     const consentVer = consenso_version || process.env.CONSENT_VERSION || '';
     const aiGenerated = req.body.ai_generated === false ? 0 : 1;
 
+    const finalSocioCai = socio_cai ? 1 : 0;
+    const finalSezioneCai = finalSocioCai ? (sezione_cai || '').trim().slice(0, 120) || null : null;
+    const finalRuoloCai = (ruolo_cai || '').trim().slice(0, 100) || null;
+    const finalReferenteSicai = referente_sicai ? 1 : 0;
+    const finalReferenteSicaiAmbito = finalReferenteSicai ? (referente_sicai_ambito || '').trim().slice(0, 100) || null : null;
+
     const email = img.email;
 
     // Check trust cache: email verified within the trust window → publish directly
@@ -183,6 +190,8 @@ router.post('/:id/finalize', async (req, res, next) => {
           paese = ?, regione = ?, provincia = ?, comune = ?,
           stage_id = ?, stage_ref = ?, stage_distance_m = ?,
           ai_generated = ?,
+          socio_cai = ?, sezione_cai = ?, ruolo_cai = ?,
+          referente_sicai = ?, referente_sicai_ambito = ?,
           consenso = 1, consenso_version = ?, consenso_accepted_at = ?
          WHERE id = ?`
       ).run(
@@ -190,7 +199,10 @@ router.post('/:id/finalize', async (req, res, next) => {
         finalLat, finalLng,
         geoInfo.paese ?? null, geoInfo.regione ?? null, geoInfo.provincia ?? null, geoInfo.comune ?? null,
         stageInfo.stage_id, stageInfo.stage_ref, stageInfo.distance_m,
-        aiGenerated, consentVer, now, img.id
+        aiGenerated,
+        finalSocioCai, finalSezioneCai, finalRuoloCai,
+        finalReferenteSicai, finalReferenteSicaiAmbito,
+        consentVer, now, img.id
       );
 
       const PUBLIC_BASE = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -229,6 +241,8 @@ router.post('/:id/finalize', async (req, res, next) => {
           paese = ?, regione = ?, provincia = ?, comune = ?,
           stage_id = ?, stage_ref = ?, stage_distance_m = ?,
           ai_generated = ?,
+          socio_cai = ?, sezione_cai = ?, ruolo_cai = ?,
+          referente_sicai = ?, referente_sicai_ambito = ?,
           consenso = 1, consenso_version = ?, consenso_accepted_at = ?
          WHERE id = ?`
       ).run(
@@ -237,7 +251,10 @@ router.post('/:id/finalize', async (req, res, next) => {
         finalLat, finalLng,
         geoInfo.paese ?? null, geoInfo.regione ?? null, geoInfo.provincia ?? null, geoInfo.comune ?? null,
         stageInfo.stage_id, stageInfo.stage_ref, stageInfo.distance_m,
-        aiGenerated, consentVer, now, img.id
+        aiGenerated,
+        finalSocioCai, finalSezioneCai, finalRuoloCai,
+        finalReferenteSicai, finalReferenteSicaiAmbito,
+        consentVer, now, img.id
       );
       return res.json({ pending: true, id: img.id, email, email_sent: false });
     }
@@ -255,6 +272,8 @@ router.post('/:id/finalize', async (req, res, next) => {
         paese = ?, regione = ?, provincia = ?, comune = ?,
         stage_id = ?, stage_ref = ?, stage_distance_m = ?,
         ai_generated = ?,
+        socio_cai = ?, sezione_cai = ?, ruolo_cai = ?,
+        referente_sicai = ?, referente_sicai_ambito = ?,
         consenso = 1, consenso_version = ?, consenso_accepted_at = ?
        WHERE id = ?`
     ).run(
@@ -263,7 +282,10 @@ router.post('/:id/finalize', async (req, res, next) => {
       finalLat, finalLng,
       geoInfo.paese ?? null, geoInfo.regione ?? null, geoInfo.provincia ?? null, geoInfo.comune ?? null,
       stageInfo.stage_id, stageInfo.stage_ref, stageInfo.distance_m,
-      aiGenerated, consentVer, now, img.id
+      aiGenerated,
+      finalSocioCai, finalSezioneCai, finalRuoloCai,
+      finalReferenteSicai, finalReferenteSicaiAmbito,
+      consentVer, now, img.id
     );
 
     try {

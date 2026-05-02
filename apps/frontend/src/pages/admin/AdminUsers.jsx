@@ -29,8 +29,13 @@ export default function AdminUsers() {
                 <tr>
                   <th>Email</th>
                   <th>Nome autore</th>
+                  <th>Socio CAI</th>
+                  <th>Sezione</th>
+                  <th>Ruolo</th>
+                  <th>Referente SICAI</th>
+                  <th>Tappa / Regione</th>
                   <th>Foto</th>
-                  <th>Email verificata</th>
+                  <th>Email verif.</th>
                   <th>Ultima upload</th>
                 </tr>
               </thead>
@@ -39,6 +44,19 @@ export default function AdminUsers() {
                   <tr key={u.email}>
                     <td><a href={`mailto:${u.email}`}>{u.email}</a></td>
                     <td>{u.autore_nome || '—'}</td>
+                    <td style={{ textAlign: 'center' }}>
+                      {u.socio_cai
+                        ? <span className="admin-badge admin-badge--ok">Sì</span>
+                        : <span className="admin-badge admin-badge--neutral">No</span>}
+                    </td>
+                    <td style={{ fontSize: 12 }}>{u.sezione_cai || '—'}</td>
+                    <td style={{ fontSize: 12 }}>{u.ruolo_cai || '—'}</td>
+                    <td style={{ textAlign: 'center' }}>
+                      {u.referente_sicai
+                        ? <span className="admin-badge admin-badge--ok">Sì</span>
+                        : <span className="admin-badge admin-badge--neutral">No</span>}
+                    </td>
+                    <td style={{ fontSize: 12 }}>{u.referente_sicai_ambito || '—'}</td>
                     <td style={{ textAlign: 'center' }}>{u.photo_count}</td>
                     <td style={{ textAlign: 'center' }}>
                       {u.verified
