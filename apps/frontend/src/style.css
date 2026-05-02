@@ -217,6 +217,65 @@ button { cursor: pointer; }
 .photo-detail img { width: 100%; border-radius: 8px; margin-bottom: 20px; }
 .photo-detail h1 { font-size: 1.5rem; margin-bottom: 8px; }
 
+/* Multi-photo upload grid (step 0 thumbnail selection) */
+.photo-thumb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+.photo-thumb {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f0f0f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,.12);
+}
+.photo-thumb img {
+  width: 100%; height: 100px; object-fit: cover; display: block;
+}
+.photo-thumb__name {
+  font-size: 11px; color: #555; padding: 4px 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.photo-thumb__remove {
+  position: absolute; top: 4px; right: 4px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(0,0,0,.55); color: #fff; border: none; cursor: pointer;
+  font-size: 13px; display: flex; align-items: center; justify-content: center; padding: 0;
+}
+.photo-thumb__remove:hover:not(:disabled) { background: rgba(200,0,0,.8); }
+.photo-thumb__badge {
+  position: absolute; top: 4px; left: 4px;
+  background: rgba(0,100,0,.7); color: #fff;
+  font-size: 10px; padding: 2px 5px; border-radius: 4px;
+}
+
+/* Per-photo progress badge (steps 1-2 for multi-photo) */
+.photo-progress-badge {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px; padding: 8px 10px;
+  background: #f5f7fa; border-radius: 6px;
+}
+.photo-progress-badge img {
+  width: 40px; height: 40px; object-fit: cover;
+  border-radius: 4px; flex-shrink: 0; border: 1px solid #ddd;
+}
+
+/* Summary card (step 4 review for each photo) */
+.upload-summary-card {
+  background: #fff; border: 1px solid #e8e8e8;
+  border-radius: 8px; overflow: hidden; margin-bottom: 16px;
+}
+.upload-summary-card img {
+  width: 100%; max-height: 200px; object-fit: cover; display: block;
+}
+.upload-summary-card__label {
+  padding: 6px 12px 0; font-size: 12px; font-weight: 600; color: #888;
+}
+.upload-summary-card__body { padding: 8px 12px 12px; }
+
 /* Shared metadata block */
 .photo-meta { font-size: 13px; line-height: 1.6; margin: 0; }
 .photo-meta__row { display: flex; gap: 10px; padding: 5px 0; border-bottom: 1px solid #f0f0f0; }

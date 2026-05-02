@@ -6,6 +6,7 @@ export default function VerifyPendingPage() {
   const navigate = useNavigate();
   const email = searchParams.get('email') || '';
   const emailSent = searchParams.get('email_sent') !== 'false';
+  const count = parseInt(searchParams.get('count') || '1', 10);
 
   return (
     <div className="upload-page">
@@ -13,7 +14,9 @@ export default function VerifyPendingPage() {
       <div className="step-card" style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
         <h2 style={{ marginBottom: 12 }}>
-          {emailSent ? 'Foto inviata!' : 'Foto aggiunta!'}
+          {emailSent
+            ? (count > 1 ? `${count} foto inviate!` : 'Foto inviata!')
+            : (count > 1 ? `${count} foto aggiunte!` : 'Foto aggiunta!')}
         </h2>
         <p style={{ fontSize: 15, marginBottom: 8 }}>
           {emailSent
@@ -38,7 +41,7 @@ export default function VerifyPendingPage() {
         )}
         <div className="btn-row" style={{ justifyContent: 'center' }}>
           <button className="btn btn-primary" onClick={() => navigate('/upload')}>
-            Carica un'altra foto
+            Carica altre foto
           </button>
           <button className="btn btn-secondary" onClick={() => navigate('/')}>
             Vai alla mappa
