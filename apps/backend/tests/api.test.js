@@ -833,14 +833,23 @@ describe('Admin — nuovi endpoint', () => {
     expect(typeof res.body.total_pending_validation).toBe('number');
     expect(Array.isArray(res.body.by_stage)).toBe(true);
     expect(Array.isArray(res.body.by_region)).toBe(true);
+    expect(Array.isArray(res.body.missing_stages)).toBe(true);
+    expect(Array.isArray(res.body.missing_regioni)).toBe(true);
+    expect(typeof res.body.total_users).toBe('number');
+    expect(typeof res.body.total_verified).toBe('number');
+    expect(typeof res.body.total_unverified).toBe('number');
+    expect(Array.isArray(res.body.top10_users)).toBe(true);
   });
 
-  test('GET /api/admin/users → array', async () => {
+  test('GET /api/admin/users → paginazione', async () => {
     const res = await request(app)
       .get('/api/admin/users')
       .set('Authorization', 'Bearer test-admin-token');
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(Array.isArray(res.body.items)).toBe(true);
+    expect(typeof res.body.total).toBe('number');
+    expect(res.body.page).toBe(1);
+    expect(res.body.page_size).toBe(50);
   });
 
   test('GET /api/admin/images → struttura corretta', async () => {

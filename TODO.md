@@ -1,3 +1,36 @@
+# PROGRESS
+
+# TODO
+
+- [ ] Aggiungere documentazione .md e PDF anche per DPO CAI + email da mandare a resp. CAI (su carta intestata Montagna Servizi / SICAI)
+
+====== GOLIVE DOPO ACCETTAZIONE CAI ========
+
+# BACKLOG
+
+- [ ] Frontend: Migliorare il funzionamento da mobile (UI)
+- [ ] Migliorare l'interfaccia di visualizzazione della mappa con tutte le foto
+- [ ] Migliorare l'interfaccia di visualizzazione della funzionalità di ricerca con filtro
+
+# IDEAS
+
+- [ ] Script che analizza da Foto del MAC tutte le foto presenti e verifica se hanno posizione, nel caso la abbiano verificano che siano nel buffer SICAI, e se lo sono le copia (con info posizione) in una cartella con sottocartelle per regione, sottocartelle per tappa, e rinomina con SICAI_Foto_AlessioPiccioli_[Regione]_[TAPPA].jpeg
+
+# DONE
+
+- [X] Backend UX: /users paginazione dei risultati, paginazione visibile sempre in fondo alla pagina
+- [X] Backend UX: /foto paginazione dei risultati, paginazione visibile sempre in fondo alla pagina
+- [X] Backend UX: menu, le due voci di menu in basso ("Esci" e "Mappa") devono essere sempre visibili anche se la pagina è lunga 
+- [X] Frontend: Nel dettaglio publico della immagine mettere anche la mappa con la posizione della foto e la traccia SICAI visibile 
+per come deve essere citata la fonte
+- [X] Backend: Nella dashboard mettere "Distribuzione per tappa" in ordine decrescente
+- [X] Backend: Nella dashboard mettere "Distribuzione per regione" in ordine decrescente
+- [X] Backend: Nella dashboard aggiungere Blocco relativo a "Regioni mancanti"
+- [X] Backend: Nella dashboard aggiungere Blocco relativo a "Tappe Mancanti"
+- [X] Backend: Nella dashboard aggiungere blocchi relativo agli utenti: numero totale di utenti / numero utenti validati / non validati / classifica dei primi 10 utenti
+- [X] Frontend: Nel dettaglio publico della immagine mettere un testo copiabile 
+- [X] Frontend: Nel dettaglio publico della immagine mettere link per scaricare la immagine
+
 - [X] Upload multiplo: implementare funzionalità per caricare più foto contemporaneamente. Nello Step 1. deve essere possibile selezionare più foto contemporaneamente che vengono mostrate come thubnail (anche una sola), nel caso in cui le foto selezionate siano più di una: lo step 2 e 3 deve essere ripetuto per ciascuna foto, nel riepilogo si devono mostrare tutte le foto selezionate con unico tasto publica.
 
 - [X] Upload multiplo: modifica UX del campo in cui si dice che è possibile fare anche il drag and drop (bottone)
@@ -10,34 +43,10 @@
 
 - [X] Upload multiplo: Thumbnail al caricamento. Oltre a GPX ok (verde) / non ok se il GPS non è presente (rosso), aggiungere anche uno stato in cui GPX in grigio per quelle foto che hanno GPX presente ma sono fuori dal buffer SICAI (VITE_STAGE_MAX_DISTANCE_M)
 
-# PROGRESS
-
-# TODO
-
-- [ ] Upload multiplo: revisione del flusso di caricamento in base alla presenza di foto con GPX ok e dentro il buffer SICAI (VITE_STAGE_MAX_DISTANCE_M), piuttosto che foto che non sono nelle consizioni di cui sopra. 
+- [X] Upload multiplo: revisione del flusso di caricamento in base alla presenza di foto con GPX ok e dentro il buffer SICAI (VITE_STAGE_MAX_DISTANCE_M), piuttosto che foto che non sono nelle consizioni di cui sopra. 
 CASO1: TUTTE le foto sono con GPX OK e dentro il buffer SICAI -> si passa dallo step1. allo step 4. (revisione) con una finestra intermedia in cui vengono effettuate tutte le chiamate AI per aggiungere titolo e descrizione
 CASO2: ci sono ALCUNE foto che non sono nella condizione GPX OK + buffer SICAI ok. Prima di passa per le foto che non sono nella condizione si revisionano gli step 2 e 3 al termine di questa revisione si lancia arricchimento AI per tutte le foto che hanno GPX + buffer SICAI ok e si manda alla revisione nello step 4 per tutte le foto caricate
 
-- [ ] Backend UX: /users paginazione dei risultati
-
-- [ ] Backend UX: menu, le due voci di menu in basso ("Esci" e "Mappa") devono essere sempre visibili anche se la pagina è lunga 
-
-- [ ] Aggiungere documentazione .md e PDF anche per DPO CAI + email da mandare a resp. CAI (su carta intestata Montagna Servizi / SICAI)
-
-====== GOLIVE DOPO ACCETTAZIONE CAI ========
-
-# BACKLOG
-
-- [ ] Nel dettaglio publico della 
-- [ ] Migliorare il funzionamento da mobile (UI)
-- [ ] Migliorare l'interfaccia di visualizzazione della mappa con tutte le foto
-- [ ] Migliorare l'interfaccia di visualizzazione della funzionalità di ricerca con filtro
-
-# IDEAS
-
-- [ ] Script che analizza da Foto del MAC tutte le foto presenti e verifica se hanno posizione, nel caso la abbiano verificano che siano nel buffer SICAI, e se lo sono le copia (con info posizione) in una cartella con sottocartelle per regione, sottocartelle per tappa, e rinomina con SICAI_Foto_AlessioPiccioli_[Regione]_[TAPPA].jpeg
-
-# DONE
 - [X] Revisione helper dei campi in funzione CAI, specificare meglio perché indirizzo email
 
 - [X] Controllare meccanismo di salvataggio dei dati (flag acceso/spento)

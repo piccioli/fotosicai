@@ -69,7 +69,10 @@ export const adminApi = {
 
   stats: () => adminRequest('/stats'),
 
-  users: () => adminRequest('/users'),
+  users: ({ page } = {}) => {
+    const qs = page && page > 1 ? `?page=${page}` : '';
+    return adminRequest(`/users${qs}`);
+  },
 
   exportUsers: async () => {
     const token = localStorage.getItem('fotosicai_admin_token') || '';
