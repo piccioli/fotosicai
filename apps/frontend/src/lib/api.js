@@ -10,9 +10,19 @@ async function request(path, opts = {}) {
   return res.json();
 }
 
+function mapImagesQuery(bbox) {
+  const qs = new URLSearchParams();
+  qs.set(
+    'limit',
+    import.meta.env.VITE_PUBLIC_MAP_IMAGE_LIMIT || '25000'
+  );
+  if (bbox) qs.set('bbox', bbox);
+  return `/images?${qs.toString()}`;
+}
+
 export const api = {
-  // Images
-  getImages: (bbox) => request(`/images${bbox ? `?bbox=${bbox}` : ''}`),
+  // Images (limit alto per mappa: il backend applica comunque un tetto massimo)
+  getImages: (bbox) => request(mapImagesQuery(bbox)),
   getImage: (id) => request(`/images/${id}`),
 
   // Upload flow

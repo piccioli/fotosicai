@@ -14,8 +14,6 @@
 
 # IDEAS
 
-- [ ] Script che analizza da Foto del MAC tutte le foto presenti e verifica se hanno posizione, nel caso la abbiano verificano che siano nel buffer SICAI, e se lo sono le copia (con info posizione) in una cartella con sottocartelle per regione, sottocartelle per tappa, e rinomina con SICAI_Foto_AlessioPiccioli_[Regione]_[TAPPA].jpeg
-
 # DONE
 
 - [X] Backend UX: /users paginazione dei risultati, paginazione visibile sempre in fondo alla pagina
