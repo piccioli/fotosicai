@@ -1,5 +1,6 @@
 # PROGRESS
 
+- [ ] Migliorare il prompt AI in base alla distanza dal percorso.
 - [ ] Aggiungere documentazione .md e PDF anche per DPO CAI + email da mandare a resp. CAI (su carta intestata Montagna Servizi / SICAI)
 
 # TODO
@@ -8,9 +9,14 @@
 
 # BACKLOG
 
-- [ ] Frontend: Migliorare il funzionamento da mobile (UI)
-- [ ] Migliorare l'interfaccia di visualizzazione della mappa con tutte le foto
-- [ ] Migliorare l'interfaccia di visualizzazione della funzionalità di ricerca con filtro
+- [ ] SYS: al GOLIVE impostare procedura di backup HETZNER
+- [ ] SYS: impostare procedura di backup puntale (DB + dati) riutilizzabile comre restore su ambiente simile
+- [ ] SYS: al GOLIVE predisporre anche un ambiente UAT (User Acceptance Test) con indirizzo fotosicaiuat.montagnaservizi.it che abbia uno script che copia una volta al giorno i dati di produzione (DB + link sym x le immagini)
+- [ ] DOCS: aggiungere nel readme le indicazioni relative allo stress test e alla occupazione prevista (10.000 foto -> 10 Gb di storage + 30 Mb di DB)
+- [ ] Legal: Procedura di eliminazione autore / Anonimizzazione foto
+- [ ] (EPIC) Frontend: Migliorare il funzionamento da mobile (UI)
+- [ ] (EPIC) Migliorare l'interfaccia di visualizzazione della mappa con tutte le foto
+- [ ] (EPIC) Migliorare l'interfaccia di visualizzazione della funzionalità di ricerca con filtro
 
 # IDEAS
 
