@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.6.0 - 2026-05-03
+
+### Added
+- **Mappa pubblica**: limite configurabile di foto richieste per la vista mappa (`VITE_PUBLIC_MAP_IMAGE_LIMIT` nel frontend; `PUBLIC_MAP_IMAGE_DEFAULT_LIMIT` e `PUBLIC_MAP_IMAGE_MAX_LIMIT` nel backend), documentato in `.env.example` e propagato al build Docker (`Dockerfile.frontend`, `docker-compose.yml`).
+- **Documentazione**: materiali per stakeholder in `docs/` (flusso upload e proprietà del dato, richiesta accettazione condizioni in MD/PDF/DOCX).
+
+### Changed
+- **Legal**: aggiornato `legal/consenso.md` (chiarezza su diritti d’uso, dati personali vs dati di “opera”, ruolo MS/CAI e revocabilità dove applicabile).
+- **Stress test**: `scripts/stress_test.js` mostra su stderr stima ETA e orario di fine del seed (media mobile sui tempi per foto).
+- **Frontend**: versione e data release nel popup info letti da `package.json` (rimossi define Vite `__APP_*` ridondanti).
+
+### Removed
+- Eliminato `TODO.md` operativo e bozza email DPO (`docs/03-email-mario-vaccarella.*`), sostituiti dalla documentazione aggiornata in `docs/`.
+
 ## v1.5.0 - 2026-05-03
 
 ### Added
