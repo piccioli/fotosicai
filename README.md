@@ -2,7 +2,7 @@
 
 Webapp full-stack per il caricamento, la georeferenziazione e la visualizzazione di fotografie lungo il Sentiero Italia CAI (SICAI).
 
-**Versione corrente: v1.5.0** (maggio 2026) — novità e storico in [CHANGELOG.md](CHANGELOG.md).
+**Versione corrente: v1.6.0** (maggio 2026) — novità e storico in [CHANGELOG.md](CHANGELOG.md).
 
 ## Funzionalità
 

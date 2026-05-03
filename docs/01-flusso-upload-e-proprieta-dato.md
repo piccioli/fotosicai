@@ -10,7 +10,7 @@
 | **URL produzione** | https://fotosicai.montagnaservizi.it |
 | **URL form di caricamento** | https://fotosicai.montagnaservizi.it/upload |
 | **Riferimento contrattuale** | Piano Progetto Sentiero Italia CAI — CIG B165634123 (2024-2026) |
-| **Versione applicazione** | v1.5.0 (maggio 2026) |
+| **Versione applicazione** | v1.6.0 (maggio 2026) |
 | **Versione documento consenso** | 2026-05-02 |
 | **Data documento** | 2 maggio 2026 |
 
