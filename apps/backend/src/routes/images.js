@@ -13,10 +13,18 @@ function withUrls(img) {
 
 const PUBLIC_WHERE = "status='published' AND validated_at IS NOT NULL";
 
-// GET /api/images?bbox=W,S,E,N&limit=200
+/** Mappa / lista pubblica: evita risposte enormi ma consente archivi grandi (override con ?limit=). */
+const DEFAULT_LIMIT = Number(process.env.PUBLIC_MAP_IMAGE_DEFAULT_LIMIT) || 25000;
+const MAX_LIMIT = Number(process.env.PUBLIC_MAP_IMAGE_MAX_LIMIT) || 100000;
+
+// GET /api/images?bbox=W,S,E,N&limit=
 router.get('/', (req, res) => {
   const db = getDb();
-  const limit = Math.min(Number(req.query.limit) || 500, 2000);
+  const requested = Number(req.query.limit);
+  const limit = Math.min(
+    Math.max(1, Number.isFinite(requested) && requested > 0 ? requested : DEFAULT_LIMIT),
+    MAX_LIMIT
+  );
 
   if (req.query.bbox) {
     const parts = req.query.bbox.split(',').map(Number);

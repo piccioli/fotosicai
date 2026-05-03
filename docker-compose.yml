@@ -40,6 +40,7 @@ services:
         VITE_TILE_URL: ${VITE_TILE_URL:-https://api.webmapp.it/tiles/{z}/{x}/{y}.png}
         VITE_TILE_ATTRIBUTION: ${VITE_TILE_ATTRIBUTION:-&copy; CAI &copy; OpenStreetMap}
         VITE_APP_ENV: ${VITE_APP_ENV:-production}
+        VITE_PUBLIC_MAP_IMAGE_LIMIT: ${VITE_PUBLIC_MAP_IMAGE_LIMIT:-25000}
     restart: unless-stopped
     depends_on:
       backend:
